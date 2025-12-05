@@ -172,17 +172,22 @@ def is_new_issue(message: str, history: List[Dict]) -> bool:
     return False
 
 def build_context(context_docs: List[Dict]) -> str:
-    """Build context string from retrieved documents."""
+    """Build context string from retrieved documents, filtering out bad chat transcripts."""
     context_parts = []
     
     for doc in context_docs:
         source = doc['metadata']['source']
+        text = doc['metadata'].get('text', '')
+        
+        # Skip chat transcripts with placeholders
+        if source == 'chat_transcript' and ('[EMAIL]' in text or '[URL]' in text or '[PHONE]' in text):
+            continue
         
         if source == 'kb_article':
             title = doc['metadata'].get('title', 'KB Article')
-            context_parts.append(f"[KB Article] {title}\n{doc['metadata']['text']}")
+            context_parts.append(f"[KB Article] {title}\n{text}")
         else:
-            context_parts.append(f"[Support Chat]\n{doc['metadata']['text']}")
+            context_parts.append(f"[Support Chat]\n{text}")
     
     return "\n\n---\n\n".join(context_parts)
 
@@ -191,33 +196,33 @@ def generate_response(message: str, history: List[Dict], context: Optional[str] 
     
     system_prompt = """You are AceBuddy, a technical support assistant for Ace Cloud Hosting.
 
-YOUR ONLY JOB: Guide users through the EXACT steps from the knowledge base, in order, 1-2 steps at a time.
+YOUR JOB: Guide users through the EXACT steps from the knowledge base, in order, 1-2 steps at a time.
 
 CRITICAL RULES:
-1. ONLY use KB articles (source: kb_article) - IGNORE chat transcripts
-2. If the context has [EMAIL] or [URL] placeholders, DO NOT use it - say you'll connect them with support
-3. ALWAYS give steps in sequential order: 1-2, then 3-4, then 5, etc.
-4. NEVER skip steps - if user says "done" after steps 1-2, give steps 3-4 next
-5. COPY the exact step text from the KB - do not paraphrase
-6. After giving 1-2 steps, ALWAYS ask "Have you completed this?"
-7. DO NOT make up steps that aren't in the knowledge base
-8. Look at your previous response to see which steps you already gave, then give the NEXT steps
+1. ALWAYS give steps in sequential order: 1-2, then 3-4, then 5, etc.
+2. NEVER skip steps - if user says "done" after steps 1-2, give steps 3-4 next
+3. COPY the exact step text from the KB - do not paraphrase
+4. After giving 1-2 steps, ALWAYS ask "Have you completed this?"
+5. DO NOT make up steps that aren't in the knowledge base
+6. Look at your previous response to see which steps you already gave, then give the NEXT steps
+7. If no relevant KB article is found, offer to connect them with support at 1-888-415-5240
 
-EXAMPLE GOOD RESPONSE:
-KB Article: "Step 1: Visit portal. Step 2: Click Forgot. Step 3: Enter CAPTCHA."
-You: "Step 1: Visit portal. Step 2: Click Forgot. Have you completed this?"
+EXAMPLE CONVERSATION:
+KB: "Step 1: Visit portal. Step 2: Click Forgot. Step 3: Enter CAPTCHA. Step 4: Choose method. Step 5: Enter password."
 
-EXAMPLE BAD RESPONSE (DO NOT DO THIS):
-Chat Transcript: "Step 1: Email us at [EMAIL]"
-You: "Step 1: Email us at [EMAIL]" ← WRONG! Don't use chat transcripts with placeholders!
+Bot: "Step 1: Visit portal. Step 2: Click Forgot. Have you completed this?"
+User: "done"
+Bot: "Step 3: Enter CAPTCHA. Step 4: Choose method. Have you completed this?"
+User: "yes"  
+Bot: "Step 5: Enter password. Have you completed this?"
 
-If you see [EMAIL], [URL], or chat transcript content, say: "I'll connect you with our support team at 1-888-415-5240 or support@acecloudhosting.com for assistance with this."""
+NEVER skip from step 2 to step 5!"""
     
     # Build messages
     messages = [{"role": "system", "content": system_prompt}]
     
     # Add context if available (for both new issues AND continuations)
-    if context:
+    if context and context.strip():
         context_message = f"""KNOWLEDGE BASE ARTICLE (follow these steps IN ORDER):
 
 {context}
@@ -228,6 +233,9 @@ IMPORTANT:
 - Continue sequentially until all steps are complete
 - Copy the exact step text, don't paraphrase"""
         messages.append({"role": "system", "content": context_message})
+    elif not context or not context.strip():
+        # No good context found
+        return "I don't have specific steps for this issue in my knowledge base. Please contact our support team at 1-888-415-5240 or support@acecloudhosting.com for assistance."
     
     # Add conversation history
     messages.extend(history)
