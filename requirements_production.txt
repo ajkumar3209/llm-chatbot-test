@@ -1,0 +1,9 @@
+openai>=1.0.0
+pinecone-client>=3.0.0
+python-dotenv
+tqdm
+fastapi
+uvicorn
+pydantic
+requests
+urllib3

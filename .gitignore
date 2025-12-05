@@ -1,0 +1,89 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data files (too large for git)
+Chat Transcripts/
+processed_data/*.json
+processed_data/*.jsonl
+SOP and KB Docs/
+sample_images/
+
+# Test and analysis scripts (not needed for deployment)
+test_*.py
+demo_*.py
+compare_*.py
+analyze_*.py
+inspect_*.py
+check_*.py
+show_*.py
+validate_*.py
+verify_*.py
+list_*.py
+
+# Data processing scripts (not needed for deployment)
+extract_pdfs.py
+clean_chats*.py
+process_sop_kb.py
+prepare_*.py
+combine_*.py
+create_quality_*.py
+build_vectordb.py
+ingest_to_pinecone.py
+ingest_to_pinecone_v2.py
+run_pipeline.py
+
+# Alternative chatbot versions (not needed for deployment)
+interactive_chatbot.py
+rag_chatbot.py
+chatbot.py
+config.py
+
+# Documentation (keep only essential)
+EMBEDDING_FLOW_EXPLAINED.md
+OPTIMAL_DATA_STRATEGY.md
+DATA_READY_SUMMARY.md
+PROCESSING_SUMMARY.md
+PRODUCTION_PLAN.md
+FINAL_SUMMARY.md
+TEST_FLOW_EXPLAINED.md
+SUCCESS_SUMMARY.md
+QUICK_START.md
+
+# Logs
+*.log
