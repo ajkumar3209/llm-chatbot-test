@@ -349,6 +349,11 @@ async def salesiq_webhook(request: dict):
         # Determine if new issue
         new_issue = is_new_issue(message_text, history)
         
+        # If it's a new issue, clear old context
+        if new_issue and session_id in session_contexts:
+            print(f"[SalesIQ] New issue detected, clearing old context")
+            del session_contexts[session_id]
+        
         context = None
         
         # If new issue, retrieve context from Pinecone
@@ -376,8 +381,12 @@ async def salesiq_webhook(request: dict):
             print(f"[SalesIQ] Context preview: {context[:300]}...")
         response_text = generate_response(message_text, history, context)
         
-        # Clean response - remove markdown
+        # Clean response - remove markdown and extra line breaks
         response_text = response_text.replace('**', '').replace('*', '').strip()
+        
+        # Remove excessive line breaks (replace double/triple newlines with single)
+        import re
+        response_text = re.sub(r'\n\s*\n+', '\n', response_text)
         
         # Don't truncate - let full response through
         # SalesIQ can handle longer messages
