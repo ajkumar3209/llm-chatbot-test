@@ -165,11 +165,32 @@ def is_new_issue(message: str, history: List[Dict]) -> bool:
     
     # IMPORTANT: Check technical keywords FIRST before continuation keywords
     # This ensures "quickbooks frozen" is detected as NEW, not continuation
+    # BUT: Exclude simple answers like "shared server", "dedicated", "yes", "no"
     technical_keywords = [
         "quickbooks", "frozen", "error", "issue", "problem", "not working",
-        "disk space", "password", "reset", "server", "lacerte", "drake",
+        "disk space", "password", "reset", "lacerte", "drake",
         "outlook", "email", "printer", "install", "setup", "configure"
     ]
+    
+    # Check if message is a simple answer to a question or correction
+    # Examples: "shared server", "dedicated", "yes enrolled", "not enrolled"
+    # Also: "but i am on a shared server", "actually it's dedicated"
+    correction_patterns = [
+        "shared server", "dedicated server", "shared", "dedicated",
+        "i am on", "i'm on", "actually", "but i", "no i"
+    ]
+    
+    # If message contains correction patterns and server type, treat as continuation
+    if any(pattern in message_lower for pattern in correction_patterns):
+        if "shared" in message_lower or "dedicated" in message_lower:
+            return False
+    
+    # Check if message is a simple answer (1-3 words)
+    if len(message.split()) <= 3:
+        # These are likely answers to clarifying questions, treat as continuation
+        simple_answers = ["yes", "no", "enrolled", "not enrolled"]
+        if any(answer in message_lower for answer in simple_answers):
+            return False
     
     if any(keyword in message_lower for keyword in technical_keywords):
         return True
@@ -226,13 +247,23 @@ FOR INFORMATIONAL CONTENT (pricing, plans, features, general info):
 3. Keep it SHORT and SIMPLE
 4. End with "Would you like to know more?"
 
-ASKING CLARIFYING QUESTIONS:
-For QuickBooks issues, ALWAYS ask server type FIRST before providing any steps:
-"Are you using a dedicated server or a shared server?"
+ASKING CLARIFYING QUESTIONS - CRITICAL:
 
-Then provide the appropriate steps based on their answer.
+For QuickBooks/Lacerte/Drake/ProSeries issues (frozen, error, not opening, etc.):
+1. FIRST ask: "Are you using a dedicated server or a shared server?"
+2. WAIT for their answer
+3. THEN provide the appropriate steps based on their server type
+
+DO NOT provide any troubleshooting steps until you know the server type.
+DO NOT offer to connect with human agent first - always ask server type and provide steps.
 
 If user mentions server type AFTER you already gave steps, apologize and provide the correct steps for their server type.
+
+Example:
+User: "My QuickBooks is frozen"
+Bot: "Are you using a dedicated server or a shared server?"
+User: "Dedicated"
+Bot: [Provide dedicated server steps]
 
 HANDLING "NOT WORKING" OR "STUCK":
 If user says steps didn't work, they're stuck, or same issue persists, THEN offer human agent:
@@ -257,12 +288,25 @@ Step 2: Enter your server username."
 
 CRITICAL: Keep responses SHORT and SIMPLE. Users want quick, easy-to-follow instructions.
 
-SPECIAL HANDLING FOR PASSWORD RESET:
-When user asks about password reset, ask enrollment status directly:
-"Are you enrolled in the Selfcare Portal? (Reply 'yes' or 'no')"
+SPECIAL HANDLING FOR PASSWORD RESET - CRITICAL:
+When user asks about password reset:
+1. FIRST ask: "Are you enrolled in the Selfcare Portal? (Reply 'yes' or 'no')"
+2. WAIT for their answer
+3. If yes: Provide Selfcare password reset steps
+4. If no: Provide enrollment steps first
 
-If yes: Provide Selfcare password reset steps
-If no: Provide enrollment steps OR alternative methods (MyPortal, email support)
+DO NOT provide any password reset steps until you know enrollment status.
+
+Example:
+User: "Can you help me with password reset"
+Bot: "Are you enrolled in the Selfcare Portal? (Reply 'yes' or 'no')"
+User: "No"
+Bot: [Provide enrollment steps]
+
+CONTINUATION KEYWORDS:
+During multi-step processes (enrollment, troubleshooting), treat these as continuation:
+- "okay", "ok", "done", "next", "continue", "what are the next steps", "okay then"
+Only treat them as acknowledgment if conversation is complete.
 
 HANDLING VAGUE QUERIES:
 For other vague questions with relevant KB article, ask a clarifying question.
@@ -498,7 +542,9 @@ async def salesiq_webhook(request: dict):
                 }
         
         # Detect if user is stuck or steps didn't work
-        stuck_keywords = ["not working", "didn't work", "still not", "still frozen", "still stuck", "doesn't work", "not fixed", "same issue", "same problem"]
+        # IMPORTANT: Only detect "stuck" when user says steps DIDN'T WORK
+        # Don't include "frozen" here - it's a valid issue description, not a stuck indicator
+        stuck_keywords = ["not working", "didn't work", "still not", "still stuck", "doesn't work", "not fixed", "same issue", "same problem"]
         if any(keyword in message_lower for keyword in stuck_keywords):
             print(f"[SalesIQ] User is stuck, will offer human agent")
             # Don't clear context yet, let LLM offer human agent option
