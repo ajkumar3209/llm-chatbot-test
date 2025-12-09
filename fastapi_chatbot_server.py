@@ -462,31 +462,41 @@ async def salesiq_webhook(request: dict):
             }
         
         # Handle simple acknowledgments (okay, thanks, etc.) - don't trigger new retrieval
-        # But NOT "okay then" or "ok then" which are continuations
-        acknowledgment_keywords = ["okay", "ok", "thanks", "thank you", "got it", "understood", "alright"]
-        is_acknowledgment = (
-            message_lower in acknowledgment_keywords or 
-            (message_lower in ["okay thanks", "ok thanks", "thank you very much", "thanks a lot"])
-        )
-        # Exclude "okay then", "ok then" which are continuations
-        if 'then' in message_lower:
-            is_acknowledgment = False
+        # CRITICAL: Check if we're in the middle of multi-step troubleshooting FIRST
+        # If last bot message asked "Have you completed this?", then "okay" means continuation
+        is_in_troubleshooting = False
+        if len(history) > 0:
+            last_bot_message = history[-1].get('content', '') if history[-1].get('role') == 'assistant' else ''
+            if 'have you completed this?' in last_bot_message.lower() or 'completed this?' in last_bot_message.lower():
+                is_in_troubleshooting = True
+                print(f"[SalesIQ] In multi-step troubleshooting, treating as continuation")
         
-        if is_acknowledgment:
-            print(f"[SalesIQ] Acknowledgment detected")
-            # If there's no history, just say you're welcome
-            if len(history) == 0:
+        # Only treat as acknowledgment if NOT in troubleshooting
+        if not is_in_troubleshooting:
+            acknowledgment_keywords = ["okay", "ok", "thanks", "thank you", "got it", "understood", "alright"]
+            is_acknowledgment = (
+                message_lower in acknowledgment_keywords or 
+                (message_lower in ["okay thanks", "ok thanks", "thank you very much", "thanks a lot"])
+            )
+            # Exclude "okay then", "ok then" which are continuations
+            if 'then' in message_lower:
+                is_acknowledgment = False
+            
+            if is_acknowledgment:
+                print(f"[SalesIQ] Acknowledgment detected (not in troubleshooting)")
+                # If there's no history, just say you're welcome
+                if len(history) == 0:
+                    return {
+                        "action": "reply",
+                        "replies": ["You're welcome! Let me know if you need anything else."],
+                        "session_id": session_id
+                    }
+                # If there's history, acknowledge and offer help
                 return {
                     "action": "reply",
-                    "replies": ["You're welcome! Let me know if you need anything else."],
+                    "replies": ["You're welcome! Is there anything else I can help you with?"],
                     "session_id": session_id
                 }
-            # If there's history, acknowledge and offer help
-            return {
-                "action": "reply",
-                "replies": ["You're welcome! Is there anything else I can help you with?"],
-                "session_id": session_id
-            }
         
         # Check if user says issue is resolved
         resolution_keywords = ["resolved", "fixed", "working now", "solved", "all set", "that's it"]
