@@ -469,21 +469,26 @@ async def salesiq_webhook(request: dict):
             last_bot_message = history[-1].get('content', '') if history[-1].get('role') == 'assistant' else ''
             if 'have you completed this?' in last_bot_message.lower() or 'completed this?' in last_bot_message.lower():
                 is_in_troubleshooting = True
-                print(f"[SalesIQ] In multi-step troubleshooting, treating as continuation")
+                print(f"[SalesIQ] In multi-step troubleshooting")
         
-        # Only treat as acknowledgment if NOT in troubleshooting
-        if not is_in_troubleshooting:
-            acknowledgment_keywords = ["okay", "ok", "thanks", "thank you", "got it", "understood", "alright"]
-            is_acknowledgment = (
-                message_lower in acknowledgment_keywords or 
-                (message_lower in ["okay thanks", "ok thanks", "thank you very much", "thanks a lot"])
-            )
-            # Exclude "okay then", "ok then" which are continuations
-            if 'then' in message_lower:
-                is_acknowledgment = False
-            
-            if is_acknowledgment:
-                print(f"[SalesIQ] Acknowledgment detected (not in troubleshooting)")
+        # Handle acknowledgments
+        acknowledgment_keywords = ["okay", "ok", "thanks", "thank you", "got it", "understood", "alright"]
+        is_acknowledgment = (
+            message_lower in acknowledgment_keywords or 
+            (message_lower in ["okay thanks", "ok thanks", "thank you very much", "thanks a lot"])
+        )
+        # Exclude "okay then", "ok then" which are continuations
+        if 'then' in message_lower:
+            is_acknowledgment = False
+        
+        if is_acknowledgment:
+            # If in troubleshooting and user says just "okay" or "ok" → continuation
+            if is_in_troubleshooting and message_lower in ["okay", "ok"]:
+                print(f"[SalesIQ] 'Okay' in troubleshooting, treating as continuation")
+                # Let it fall through to generate_response for next steps
+            # If user says "thanks" or "okay thanks" → acknowledge
+            else:
+                print(f"[SalesIQ] Acknowledgment detected")
                 # If there's no history, just say you're welcome
                 if len(history) == 0:
                     return {
@@ -497,6 +502,35 @@ async def salesiq_webhook(request: dict):
                     "replies": ["You're welcome! Is there anything else I can help you with?"],
                     "session_id": session_id
                 }
+        
+        # Handle conversational phrases - user saying they'll try/check/test
+        # These should be acknowledged naturally, not trigger KB retrieval
+        
+        # Check for "will try/check" phrases FIRST (more specific)
+        will_try_phrases = [
+            "let me check", "i will check", "i'll check", "let me try", "i will try", "i'll try",
+            "let me test", "i will test", "i'll test", "let me see", "i will see", "i'll see",
+            "will inform you", "will let you know", "get back to you", "inform you later",
+            "check and inform", "try and inform", "test and inform", "check your process",
+            "try your steps", "follow your steps", "will do", "will follow"
+        ]
+        if any(phrase in message_lower for phrase in will_try_phrases):
+            print(f"[SalesIQ] User will try steps")
+            return {
+                "action": "reply",
+                "replies": ["Sure! Take your time and let me know if you need any help or have questions."],
+                "session_id": session_id
+            }
+        
+        # Check for clarification phrases (less specific, check after)
+        clarification_phrases = ["i did not say", "didn't say anything", "i am saying", "just saying"]
+        if any(phrase in message_lower for phrase in clarification_phrases):
+            print(f"[SalesIQ] User clarifying")
+            return {
+                "action": "reply",
+                "replies": ["I understand. How can I help you?"],
+                "session_id": session_id
+            }
         
         # Check if user says issue is resolved
         resolution_keywords = ["resolved", "fixed", "working now", "solved", "all set", "that's it"]
