@@ -249,10 +249,15 @@ Step 2: Enter your server username."
 
 CRITICAL: Keep responses SHORT and SIMPLE. Users want quick, easy-to-follow instructions.
 
+SPECIAL HANDLING FOR PASSWORD RESET:
+When user asks about password reset, ask enrollment status directly:
+"Are you enrolled in the Selfcare Portal? (Reply 'yes' or 'no')"
+
+If yes: Provide Selfcare password reset steps
+If no: Provide enrollment steps OR alternative methods (MyPortal, email support)
+
 HANDLING VAGUE QUERIES:
-If the user's question is vague but you have a relevant KB article in context, ask a clarifying question:
-- "Are you asking about password reset using MyPortal?"
-- "Do you need help with [topic from KB article]?"
+For other vague questions with relevant KB article, ask a clarifying question.
 
 If no relevant KB article is found, offer to connect them with support at 1-888-415-5240."""
     
@@ -270,7 +275,7 @@ IMPORTANT:
 - If this is INFORMATIONAL (pricing, plans, features), present ALL information at once
 - For procedural: Ask "Have you completed this?" after each set of steps
 - For informational: Ask "Would you like to know more?" at the end
-- Copy the exact text, don't paraphrase"""
+- Copy the exact text, do not paraphrase"""
         messages.append({"role": "system", "content": context_message})
     elif not context or not context.strip():
         # No good context found
@@ -324,7 +329,7 @@ async def health():
 async def salesiq_webhook(request: dict):
     """
     Direct webhook endpoint for Zoho SalesIQ.
-    Handles SalesIQ's webhook format and returns response in the exact format SalesIQ expects.
+    Handles SalesIQ webhook format and returns response in the exact format SalesIQ expects.
     
     Expected Input:
     {
