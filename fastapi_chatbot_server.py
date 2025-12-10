@@ -477,15 +477,47 @@ async def salesiq_webhook(request: dict):
                 is_in_troubleshooting = True
                 print(f"[SalesIQ] In multi-step troubleshooting")
         
-        # Handle acknowledgments
-        acknowledgment_keywords = ["okay", "ok", "thanks", "thank you", "got it", "understood", "alright"]
-        is_acknowledgment = (
-            message_lower in acknowledgment_keywords or 
-            (message_lower in ["okay thanks", "ok thanks", "thank you very much", "thanks a lot"])
-        )
-        # Exclude "okay then", "ok then" which are continuations
-        if 'then' in message_lower:
-            is_acknowledgment = False
+        # Handle acknowledgments - be flexible with natural language and typos
+        def is_acknowledgment_message(msg):
+            """Check if message is an acknowledgment - handle typos and variations"""
+            msg = msg.lower().strip()
+            
+            # Exclude continuations first
+            if 'then' in msg:
+                return False
+            
+            # Direct acknowledgments (exact matches)
+            direct_acks = ["okay", "ok", "thanks", "thank you", "got it", "understood", "alright", 
+                          "perfect", "good", "great", "awesome", "nice", "cool", "yes"]
+            if msg in direct_acks:
+                return True
+            
+            # Acknowledgment with thanks (flexible matching)
+            thanks_patterns = ["thank", "thnk", "thx", "ty"]  # Handle typos
+            ok_patterns = ["ok", "okay", "okey", "okahy"]  # Handle typos
+            
+            # Check for thanks variations
+            if any(pattern in msg for pattern in thanks_patterns):
+                # "thanks", "no thanks", "okay thanks", "thanks!!", "thnaks", etc.
+                return True
+            
+            # Check for ok + thanks combinations
+            if any(ok_pattern in msg for ok_pattern in ok_patterns) and any(thanks_pattern in msg for thanks_pattern in thanks_patterns):
+                return True
+            
+            # Positive expressions
+            positive_expressions = ["i m good", "i'm good", "all good", "looks good", "working now", 
+                                  "that's it", "perfect", "excellent", "brilliant", "fantastic"]
+            if any(expr in msg for expr in positive_expressions):
+                return True
+            
+            # "No thanks" variations
+            if msg.startswith("no") and any(pattern in msg for pattern in thanks_patterns):
+                return True
+            
+            return False
+        
+        is_acknowledgment = is_acknowledgment_message(message_lower)
         
         if is_acknowledgment:
             # If in troubleshooting and user says just "okay" or "ok" → continuation
