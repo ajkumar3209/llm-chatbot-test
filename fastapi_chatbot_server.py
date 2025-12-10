@@ -337,7 +337,7 @@ IMPORTANT:
         return "Our support team can assist you better with this. Please contact them at:\n\nPhone: 1-888-415-5240 (24/7)\nEmail: support@acecloudhosting.com"
     
     # Add a safety instruction to prevent hallucination
-    messages.append({"role": "system", "content": "CRITICAL: If the knowledge base content doesn't match the user's question, say 'Our support team can assist you better with this. Please contact them at 1-888-415-5240.' DO NOT make up steps that aren't in the knowledge base. Always use positive, helpful language."})
+    messages.append({"role": "system", "content": "CRITICAL: Use the knowledge base content if it's RELATED to the user's question, even if not an exact match. For example, 'RDP display settings' articles can help with 'dual display setup'. Only say 'Our support team can assist you better with this. Please contact them at 1-888-415-5240.' if the content is completely unrelated. DO NOT make up steps that aren't in the knowledge base. Always use positive, helpful language."})
     
     # Add conversation history
     messages.extend(history)
