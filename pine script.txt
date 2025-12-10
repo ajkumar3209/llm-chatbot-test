@@ -1,0 +1,67 @@
+//@version=6
+strategy("BTCUSDT Scalping Bot - MTF EMA+RSI", overlay=true, calc_on_every_tick=true, pyramiding=0, margin_long=100, margin_short=100, default_qty_type=strategy.percent_of_equity, default_qty_value=0.5)
+
+// ==== INPUTS ====
+leverage = input.int(5, "Leverage")
+sl_percent = input.float(0.35, "Stop Loss %") / 100
+tp_percent = input.float(0.55, "Take Profit %") / 100
+
+// === TIMEFRAMES ===
+entryTF = input.timeframe("1", "Entry Timeframe")
+trendTF = input.timeframe("5", "Trend Timeframe")
+biasTF  = input.timeframe("15", "Bias Timeframe")
+
+// ==== MULTI-TIMEFRAME EMA ====
+ema9_entry  = request.security(syminfo.tickerid, entryTF, ta.ema(close, 9))
+ema21_entry = request.security(syminfo.tickerid, entryTF, ta.ema(close, 21))
+
+ema50_trend = request.security(syminfo.tickerid, trendTF, ta.ema(close, 50))
+ema50_bias  = request.security(syminfo.tickerid, biasTF, ta.ema(close, 50))
+
+// ==== MULTI-TIMEFRAME RSI ====
+rsi_entry = request.security(syminfo.tickerid, entryTF, ta.rsi(close, 14))
+rsi_trend = request.security(syminfo.tickerid, trendTF, ta.rsi(close, 14))
+
+// ==== VOLUME FILTER ====
+vol = request.security(syminfo.tickerid, entryTF, volume)
+vol_ma = request.security(syminfo.tickerid, entryTF, ta.sma(volume, 20))
+vol_ok = vol > vol_ma
+
+// ==== TREND CONDITIONS ====
+bull_bias = close > ema50_bias
+bear_bias = close < ema50_bias
+
+uptrend   = ema9_entry > ema21_entry and close > ema50_trend
+downtrend = ema9_entry < ema21_entry and close < ema50_trend
+
+// ==== ENTRY SIGNALS ====
+longSignal  = uptrend and bull_bias and rsi_entry > 50 and rsi_trend > 50 and vol_ok
+shortSignal = downtrend and bear_bias and rsi_entry < 50 and rsi_trend < 50 and vol_ok
+
+// ==== POSITION SIZE (0.5% per trade) ====
+strategy.risk.allow_entry_in(strategy.direction.long)
+strategy.risk.allow_entry_in(strategy.direction.short)
+strategy.leverage(leverage)
+
+// ==== EXECUTE TRADES ====
+if longSignal
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Long Exit", "Long",
+        stop = strategy.position_avg_price * (1 - sl_percent),
+        limit = strategy.position_avg_price * (1 + tp_percent)
+    )
+
+if shortSignal
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Short Exit", "Short",
+        stop = strategy.position_avg_price * (1 + sl_percent),
+        limit = strategy.position_avg_price * (1 - tp_percent)
+    )
+
+// ==== ALERT CONDITIONS (Webhook Ready) ====
+alertcondition(longSignal, "Long Signal", "LONG")
+alertcondition(shortSignal, "Short Signal", "SHORT")
+
+// ==== PLOT SIGNALS FOR VISUALS ====
+plotshape(longSignal, title="Long", location=location.belowbar, color=color.new(color.green, 0), style=shape.triangleup, size=size.tiny)
+plotshape(shortSignal, title="Short", location=location.abovebar, color=color.new(color.red, 0), style=shape.triangledown, size=size.tiny)

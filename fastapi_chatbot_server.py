@@ -249,21 +249,21 @@ FOR INFORMATIONAL CONTENT (pricing, plans, features, general info):
 
 ASKING CLARIFYING QUESTIONS - CRITICAL:
 
-For QuickBooks/Lacerte/Drake/ProSeries issues (frozen, error, not opening, etc.):
+For QuickBooks/Lacerte/Drake/ProSeries FROZEN issues ONLY:
 1. FIRST ask: "Are you using a dedicated server or a shared server?"
 2. WAIT for their answer
 3. THEN provide the appropriate steps based on their server type
 
-DO NOT provide any troubleshooting steps until you know the server type.
+For OTHER QuickBooks issues (errors, installation, setup, etc.):
+- Provide general steps directly, do NOT ask server type
+
+DO NOT provide any troubleshooting steps for FROZEN issues until you know the server type.
 DO NOT offer to connect with human agent first - always ask server type and provide steps.
 
-If user mentions server type AFTER you already gave steps, apologize and provide the correct steps for their server type.
-
-Example:
-User: "My QuickBooks is frozen"
-Bot: "Are you using a dedicated server or a shared server?"
-User: "Dedicated"
-Bot: [Provide dedicated server steps]
+Examples:
+User: "My QuickBooks is frozen" → Ask server type first
+User: "QuickBooks error 15212" → Provide steps directly (no server type needed)
+User: "How to install QuickBooks" → Provide steps directly (no server type needed)
 
 HANDLING "NOT WORKING" OR "STUCK":
 If user says steps didn't work, they're stuck, or same issue persists, THEN offer human agent:
@@ -292,16 +292,19 @@ SPECIAL HANDLING FOR PASSWORD RESET - CRITICAL:
 When user asks about password reset:
 1. FIRST ask: "Are you enrolled in the Selfcare Portal? (Reply 'yes' or 'no')"
 2. WAIT for their answer
-3. If yes: Provide Selfcare password reset steps
-4. If no: Provide enrollment steps first
+3. If yes: Provide Selfcare password reset steps (step-by-step)
+4. If no: Provide Selfcare ENROLLMENT steps first (step-by-step)
 
 DO NOT provide any password reset steps until you know enrollment status.
+If user is not enrolled, help them enroll first so they can reset passwords themselves.
 
 Example:
 User: "Can you help me with password reset"
 Bot: "Are you enrolled in the Selfcare Portal? (Reply 'yes' or 'no')"
 User: "No"
-Bot: [Provide enrollment steps]
+Bot: "Let me help you enroll first. Step 1: Go to selfcare.acecloudhosting.com. Have you completed this?"
+
+CRITICAL: Always break enrollment into small steps (1-2 at a time) and ask "Have you completed this?" after each set.
 
 CONTINUATION KEYWORDS:
 During multi-step processes (enrollment, troubleshooting), treat these as continuation:
@@ -604,34 +607,53 @@ async def salesiq_webhook(request: dict):
             print(f"[SalesIQ] User is stuck, will offer human agent")
             # Don't clear context yet, let LLM offer human agent option
         
-        # Determine if new issue
-        new_issue = is_new_issue(message_text, history)
-        
-        # If it's a new issue, clear old context
-        if new_issue and session_id in session_contexts:
-            print(f"[SalesIQ] New issue detected, clearing old context")
-            del session_contexts[session_id]
-        
-        context = None
-        
-        # If new issue, retrieve context from Pinecone
-        if new_issue:
-            print(f"[SalesIQ] New issue detected, retrieving context...")
-            try:
-                context_docs = retrieve_context(message_text, top_k=3)
-                if context_docs:
-                    context = build_context(context_docs)
-                    # Store context for this session
-                    session_contexts[session_id] = context
-                    print(f"[SalesIQ] Retrieved {len(context_docs)} context documents")
-            except Exception as e:
-                print(f"[SalesIQ] Context retrieval failed: {str(e)}")
-                # Continue without context
+        # Special handling for password reset flow
+        # If user says "no" after being asked about enrollment, get enrollment steps
+        if len(history) > 0 and message_lower in ["no", "not enrolled"]:
+            last_bot_message = history[-1].get('content', '') if history[-1].get('role') == 'assistant' else ''
+            if 'enrolled in the selfcare portal' in last_bot_message.lower():
+                print(f"[SalesIQ] User not enrolled, retrieving enrollment steps")
+                try:
+                    context_docs = retrieve_context("enroll selfcare portal", top_k=3)
+                    if context_docs:
+                        context = build_context(context_docs)
+                        session_contexts[session_id] = context
+                        print(f"[SalesIQ] Retrieved enrollment context")
+                except Exception as e:
+                    print(f"[SalesIQ] Enrollment retrieval failed: {str(e)}")
+                    context = None
+            else:
+                # Regular "no" continuation
+                context = session_contexts.get(session_id)
         else:
-            # Continuation - use stored context if available
-            context = session_contexts.get(session_id)
-            if context:
-                print(f"[SalesIQ] Using stored context for continuation")
+            # Determine if new issue
+            new_issue = is_new_issue(message_text, history)
+            
+            # If it's a new issue, clear old context
+            if new_issue and session_id in session_contexts:
+                print(f"[SalesIQ] New issue detected, clearing old context")
+                del session_contexts[session_id]
+            
+            context = None
+            
+            # If new issue, retrieve context from Pinecone
+            if new_issue:
+                print(f"[SalesIQ] New issue detected, retrieving context...")
+                try:
+                    context_docs = retrieve_context(message_text, top_k=3)
+                    if context_docs:
+                        context = build_context(context_docs)
+                        # Store context for this session
+                        session_contexts[session_id] = context
+                        print(f"[SalesIQ] Retrieved {len(context_docs)} context documents")
+                except Exception as e:
+                    print(f"[SalesIQ] Context retrieval failed: {str(e)}")
+                    # Continue without context
+            else:
+                # Continuation - use stored context if available
+                context = session_contexts.get(session_id)
+                if context:
+                    print(f"[SalesIQ] Using stored context for continuation")
         
         # Generate response
         print(f"[SalesIQ] Calling OpenAI...")
