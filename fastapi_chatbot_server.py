@@ -664,7 +664,25 @@ async def salesiq_webhook(request: dict):
                 "session_id": session_id
             }
         
-
+        # Handle application updates - these should go to support to avoid downtime
+        # Keywords for applications that need updates
+        app_update_keywords = ["update", "upgrade", "requires update", "needs update", "application update"]
+        app_names = ["quickbooks", "lacerte", "drake", "proseries", "qb"]
+        
+        # Check if user is asking about updating an application
+        is_app_update = False
+        if any(keyword in message_lower for keyword in app_update_keywords):
+            # Check if it's about one of our supported applications
+            if any(app in message_lower for app in app_names):
+                is_app_update = True
+        
+        if is_app_update:
+            print(f"[SalesIQ] Application update request detected")
+            return {
+                "action": "reply",
+                "replies": ["Application updates need to be handled by our support team to avoid downtime. Please contact support at:\n\nPhone: 1-888-415-5240 (24/7)\nEmail: support@acecloudhosting.com\n\nThey'll schedule the update for you!"],
+                "session_id": session_id
+            }
         
         # Detect if user is stuck or steps didn't work
         # IMPORTANT: Only detect "stuck" when user says steps DIDN'T WORK
