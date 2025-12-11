@@ -14,10 +14,19 @@ from dotenv import load_dotenv
 import urllib3
 import uvicorn
 from datetime import datetime
+import logging
+import traceback
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Ace Cloud Hosting Support Bot - Hybrid", version="2.0.0")
 
@@ -33,6 +42,12 @@ openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 LLM_MODEL = "gpt-4o-mini"
 
 conversations: Dict[str, List[Dict]] = {}
+
+# Import Zoho API integration
+from zoho_api_integration import ZohoSalesIQAPI, ZohoDeskAPI
+
+salesiq_api = ZohoSalesIQAPI()
+desk_api = ZohoDeskAPI()
 
 class Message(BaseModel):
     role: str
@@ -232,30 +247,41 @@ async def health():
 @app.post("/webhook/salesiq")
 async def salesiq_webhook(request: dict):
     """Direct webhook endpoint for Zoho SalesIQ - Hybrid LLM"""
+    session_id = None
     try:
-        print(f"[SalesIQ] Received: {request}")
+        logger.info(f"[SalesIQ] Webhook received")
+        logger.debug(f"[SalesIQ] Request payload: {request}")
         
+        # Extract session ID
         visitor = request.get('visitor', {})
         session_id = (
             visitor.get('active_conversation_id') or 
             request.get('session_id') or 
-            request.get('visitor', {}).get('id') or
+            visitor.get('id') or
             'unknown'
         )
         
-        message_obj = request.get('message', {})
-        message_text = message_obj.get('text', '') if isinstance(message_obj, dict) else str(message_obj)
+        logger.info(f"[SalesIQ] Session ID: {session_id}")
         
-        if not message_text or message_text.strip() == '':
-            print(f"[SalesIQ] Empty message, sending greeting")
+        # Extract message text - handle multiple formats
+        message_obj = request.get('message', {})
+        if isinstance(message_obj, dict):
+            message_text = message_obj.get('text', '').strip()
+        else:
+            message_text = str(message_obj).strip()
+        
+        logger.info(f"[SalesIQ] Message: {message_text[:100]}")
+        
+        # Handle empty message
+        if not message_text:
+            logger.info(f"[SalesIQ] Empty message, sending greeting")
             return {
                 "action": "reply",
                 "replies": ["Hi! I'm AceBuddy, your Ace Cloud Hosting support assistant. What can I help you with today?"],
                 "session_id": session_id
             }
         
-        print(f"[SalesIQ] Session: {session_id}, Message: {message_text}")
-        
+        # Initialize conversation history
         if session_id not in conversations:
             conversations[session_id] = []
         
@@ -270,7 +296,7 @@ async def salesiq_webhook(request: dict):
         )
         
         if is_greeting and len(history) == 0:
-            print(f"[SalesIQ] Simple greeting detected")
+            logger.info(f"[SalesIQ] Simple greeting detected")
             return {
                 "action": "reply",
                 "replies": ["Hello! How can I assist you today?"],
@@ -280,7 +306,7 @@ async def salesiq_webhook(request: dict):
         # Handle contact requests
         contact_request_phrases = ['support email', 'support number', 'contact support', 'phone number', 'email address']
         if any(phrase in message_lower for phrase in contact_request_phrases):
-            print(f"[SalesIQ] Contact request detected")
+            logger.info(f"[SalesIQ] Contact request detected")
             return {
                 "action": "reply",
                 "replies": ["You can reach Ace Cloud Hosting support at:\n\nPhone: 1-888-415-5240 (24/7)\nEmail: support@acecloudhosting.com"],
@@ -291,12 +317,16 @@ async def salesiq_webhook(request: dict):
         if len(history) > 0 and ('yes' in message_lower or 'ok' in message_lower or 'connect' in message_lower):
             last_bot_message = history[-1].get('content', '') if history[-1].get('role') == 'assistant' else ''
             if 'human agent' in last_bot_message.lower():
-                print(f"[SalesIQ] User requested human agent - initiating transfer")
+                logger.info(f"[SalesIQ] User requested human agent - initiating transfer")
                 # Build conversation history for agent to see
                 conversation_text = ""
                 for msg in history:
                     role = "User" if msg.get('role') == 'user' else "Bot"
                     conversation_text += f"{role}: {msg.get('content', '')}\n"
+                
+                # Call SalesIQ API to create chat session
+                api_result = salesiq_api.create_chat_session(session_id, conversation_text)
+                logger.info(f"[SalesIQ] API result: {api_result}")
                 
                 response = {
                     "action": "transfer",
@@ -315,7 +345,7 @@ async def salesiq_webhook(request: dict):
         # Check for issue resolution
         resolution_keywords = ["resolved", "fixed", "working now", "solved", "all set"]
         if any(keyword in message_lower for keyword in resolution_keywords):
-            print(f"[SalesIQ] Issue resolved by user")
+            logger.info(f"[SalesIQ] Issue resolved by user")
             response_text = "Great! I'm glad the issue is resolved. If you need anything else, feel free to ask!"
             conversations[session_id].append({"role": "user", "content": message_text})
             conversations[session_id].append({"role": "assistant", "content": response_text})
@@ -330,17 +360,17 @@ async def salesiq_webhook(request: dict):
         # Check for not resolved
         not_resolved_keywords = ["not resolved", "not fixed", "not working", "didn't work", "still not", "still stuck"]
         if any(keyword in message_lower for keyword in not_resolved_keywords):
-            print(f"[SalesIQ] Issue NOT resolved - offering 3 options")
+            logger.info(f"[SalesIQ] Issue NOT resolved - offering 3 options")
             response_text = """I understand this is frustrating. Here are 3 ways I can help:
 
 1. **Instant Chat** - Connect with a human agent now
-   https://your-domain.com/chat/transfer
+   Reply: "option 1" or "instant chat"
 
 2. **Schedule Callback** - We'll call you back at a convenient time
-   https://your-domain.com/callback/schedule
+   Reply: "option 2" or "callback"
 
 3. **Create Support Ticket** - We'll create a detailed ticket and follow up
-   https://your-domain.com/ticket/create
+   Reply: "option 3" or "ticket"
 
 Which option works best for you?"""
             # Add to history so next response can find it
@@ -361,7 +391,7 @@ Which option works best for you?"""
                 is_app_update = True
         
         if is_app_update:
-            print(f"[SalesIQ] Application update request detected")
+            logger.info(f"[SalesIQ] Application update request detected")
             response_text = "Application updates need to be handled by our support team to avoid downtime. Please contact support at:\n\nPhone: 1-888-415-5240 (24/7)\nEmail: support@acecloudhosting.com\n\nThey'll schedule the update for you!"
             conversations[session_id].append({"role": "user", "content": message_text})
             conversations[session_id].append({"role": "assistant", "content": response_text})
@@ -371,14 +401,18 @@ Which option works best for you?"""
                 "session_id": session_id
             }
         
-        # Check for option selections
+        # Check for option selections - INSTANT CHAT
         if "instant chat" in message_lower or "option 1" in message_lower or "chat/transfer" in message_lower:
-            print(f"[SalesIQ] User selected: Instant Chat Transfer")
+            logger.info(f"[SalesIQ] User selected: Instant Chat Transfer")
             # Build conversation history for agent to see
             conversation_text = ""
             for msg in history:
                 role = "User" if msg.get('role') == 'user' else "Bot"
                 conversation_text += f"{role}: {msg.get('content', '')}\n"
+            
+            # Call SalesIQ API to create chat session
+            api_result = salesiq_api.create_chat_session(session_id, conversation_text)
+            logger.info(f"[SalesIQ] API result: {api_result}")
             
             response = {
                 "action": "transfer",
@@ -394,8 +428,9 @@ Which option works best for you?"""
             
             return response
         
+        # Check for option selections - SCHEDULE CALLBACK
         if "callback" in message_lower or "option 2" in message_lower or "schedule" in message_lower:
-            print(f"[SalesIQ] User selected: Schedule Callback - AUTO-CLOSING CHAT")
+            logger.info(f"[SalesIQ] User selected: Schedule Callback")
             response_text = """Perfect! I'm creating a callback request for you.
 
 Please provide:
@@ -408,6 +443,15 @@ Thank you for contacting Ace Cloud Hosting!"""
             conversations[session_id].append({"role": "user", "content": message_text})
             conversations[session_id].append({"role": "assistant", "content": response_text})
             
+            # Call Desk API to create callback ticket
+            api_result = desk_api.create_callback_ticket(
+                user_email="support@acecloudhosting.com",
+                phone="pending",
+                preferred_time="pending",
+                issue_summary="Callback request from chat"
+            )
+            logger.info(f"[Desk] Callback ticket result: {api_result}")
+            
             # Clear conversation after callback (auto-close)
             if session_id in conversations:
                 del conversations[session_id]
@@ -418,8 +462,9 @@ Thank you for contacting Ace Cloud Hosting!"""
                 "session_id": session_id
             }
         
+        # Check for option selections - CREATE TICKET
         if "ticket" in message_lower or "option 3" in message_lower or "support ticket" in message_lower:
-            print(f"[SalesIQ] User selected: Create Support Ticket - AUTO-CLOSING CHAT")
+            logger.info(f"[SalesIQ] User selected: Create Support Ticket")
             response_text = """Perfect! I'm creating a support ticket for you.
 
 Please provide:
@@ -434,6 +479,17 @@ Thank you for contacting Ace Cloud Hosting!"""
             conversations[session_id].append({"role": "user", "content": message_text})
             conversations[session_id].append({"role": "assistant", "content": response_text})
             
+            # Call Desk API to create support ticket
+            api_result = desk_api.create_support_ticket(
+                user_name="pending",
+                user_email="pending",
+                phone="pending",
+                description="Support ticket from chat",
+                issue_type="general",
+                conversation_history="\n".join([f"{msg.get('role')}: {msg.get('content')}" for msg in history])
+            )
+            logger.info(f"[Desk] Support ticket result: {api_result}")
+            
             # Clear conversation after ticket creation (auto-close)
             if session_id in conversations:
                 del conversations[session_id]
@@ -447,17 +503,17 @@ Thank you for contacting Ace Cloud Hosting!"""
         # Check for agent connection requests (legacy)
         agent_request_phrases = ["connect me to agent", "connect to agent", "human agent", "talk to human", "speak to agent"]
         if any(phrase in message_lower for phrase in agent_request_phrases):
-            print(f"[SalesIQ] User requesting human agent")
+            logger.info(f"[SalesIQ] User requesting human agent")
             response_text = """I can help you with that. Here are your options:
 
 1. **Instant Chat** - Connect with a human agent now
-   https://your-domain.com/chat/transfer
+   Reply: "option 1" or "instant chat"
 
 2. **Schedule Callback** - We'll call you back at a convenient time
-   https://your-domain.com/callback/schedule
+   Reply: "option 2" or "callback"
 
 3. **Create Support Ticket** - We'll create a detailed ticket and follow up
-   https://your-domain.com/ticket/create
+   Reply: "option 3" or "ticket"
 
 Which option works best for you?"""
             conversations[session_id].append({"role": "user", "content": message_text})
@@ -498,17 +554,17 @@ Which option works best for you?"""
         
         if is_acknowledgment:
             if is_in_troubleshooting and message_lower in ["okay", "ok"]:
-                print(f"[SalesIQ] 'Okay' in troubleshooting, treating as continuation")
+                logger.info(f"[SalesIQ] 'Okay' in troubleshooting, treating as continuation")
                 # Fall through to LLM
             elif message_lower in ["ok", "okay"]:
-                print(f"[SalesIQ] 'Ok/Okay' alone, asking if need more help")
+                logger.info(f"[SalesIQ] 'Ok/Okay' alone, asking if need more help")
                 return {
                     "action": "reply",
                     "replies": ["Is there anything else I can help you with?"],
                     "session_id": session_id
                 }
             else:
-                print(f"[SalesIQ] Acknowledgment with thanks detected")
+                logger.info(f"[SalesIQ] Acknowledgment with thanks detected")
                 return {
                     "action": "reply",
                     "replies": ["You're welcome! Is there anything else I can help you with?"],
@@ -516,7 +572,7 @@ Which option works best for you?"""
                 }
         
         # Generate LLM response with embedded resolution steps
-        print(f"[SalesIQ] Calling OpenAI LLM with embedded resolution steps...")
+        logger.info(f"[SalesIQ] Calling OpenAI LLM with embedded resolution steps...")
         response_text = generate_response(message_text, history)
         
         # Clean response
@@ -526,7 +582,7 @@ Which option works best for you?"""
         response_text = re.sub(r'\n\s*\n+', '\n', response_text)
         response_text = response_text.strip()
         
-        print(f"[SalesIQ] Response: {response_text}")
+        logger.info(f"[SalesIQ] Response generated: {response_text[:100]}...")
         
         # Update conversation history
         conversations[session_id].append({"role": "user", "content": message_text})
@@ -539,11 +595,12 @@ Which option works best for you?"""
         }
         
     except Exception as e:
-        print(f"[SalesIQ] ERROR: {str(e)}")
+        logger.error(f"[SalesIQ] ERROR: {str(e)}")
+        logger.error(f"[SalesIQ] Traceback: {traceback.format_exc()}")
         return {
             "action": "reply",
             "replies": ["I'm having technical difficulties. Please call our support team at 1-888-415-5240."],
-            "session_id": request.get('session_id', 'unknown')
+            "session_id": session_id or 'unknown'
         }
 
 @app.post("/chat")
