@@ -139,6 +139,14 @@ User: "Lacerte is frozen"
 You: "Let's resolve that! First, try closing it from Task Manager. Can you do that?"
 [STOP HERE - then guide through AppData fix if needed]
 
+User: "I need to reset my password"
+You: "I can help with that! Are you trying to reset your server/user account password or your SelfCare portal password?"
+[STOP HERE - wait for clarification, don't assume]
+
+User: "Password reset"
+You: "I can help! Are you trying to reset your server/user account password or your SelfCare portal password?"
+[STOP HERE - wait for clarification]
+
 HANDOVER SCENARIOS (Escalate to human support):
 
 User: "I tried all the steps but QuickBooks is still frozen"
@@ -760,7 +768,7 @@ async def salesiq_webhook(request: dict):
         history = conversations[session_id]
         message_lower = message_text.lower().strip()
         
-        # Handle simple greetings
+        # Handle simple greetings (ONLY if no history - first message)
         greeting_patterns = ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening']
         is_greeting = (
             message_lower in greeting_patterns or
@@ -768,7 +776,7 @@ async def salesiq_webhook(request: dict):
         )
         
         if is_greeting and len(history) == 0:
-            logger.info(f"[SalesIQ] Simple greeting detected")
+            logger.info(f"[SalesIQ] Simple greeting detected - first message")
             return {
                 "action": "reply",
                 "replies": ["Hello! How can I assist you today?"],
