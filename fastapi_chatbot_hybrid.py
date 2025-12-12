@@ -673,6 +673,11 @@ GREETING:
 When user first says hello/hi or starts conversation, respond with:
 "Hello! I'm AceBuddy. How can I assist you today?"
 """
+
+def generate_response(message: str, history: List[Dict]) -> str:
+    """Generate response using LLM with embedded resolution steps"""
+    
+    system_prompt = EXPERT_PROMPT
     
     messages = [{"role": "system", "content": system_prompt}]
     messages.extend(history)
@@ -966,7 +971,7 @@ Thank you for contacting Ace Cloud Hosting!"""
                 "replies": [response_text],
                 "session_id": session_id
             }
-        
+        #check for new request
         # Check for agent connection requests (legacy)
         agent_request_phrases = ["connect me to agent", "connect to agent", "human agent", "talk to human", "speak to agent"]
         if any(phrase in message_lower for phrase in agent_request_phrases):
