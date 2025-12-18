@@ -15,28 +15,36 @@ class ZohoSalesIQAPI:
     """Zoho SalesIQ API Integration for chat transfers"""
     
     def __init__(self):
+        # Initialize with safe defaults
+        self.enabled = False
+        self.access_token = None
+        self.department_id = None
+        self.app_id = None
+        self.screen_name = "rtdsportal"
+        self.base_url = "https://salesiq.zoho.in/api/visitor/v1/rtdsportal"
+        
         try:
-            self.access_token = os.getenv("SALESIQ_ACCESS_TOKEN")
-            self.department_id = os.getenv("SALESIQ_DEPARTMENT_ID")
-            self.app_id = os.getenv("SALESIQ_APP_ID")  # Need this for visitor API
-            self.screen_name = os.getenv("SALESIQ_SCREEN_NAME", "rtdsportal")  # From your URL
+            # Safely get environment variables
+            self.access_token = os.getenv("SALESIQ_ACCESS_TOKEN", "").strip()
+            self.department_id = os.getenv("SALESIQ_DEPARTMENT_ID", "").strip()
+            self.app_id = os.getenv("SALESIQ_APP_ID", "").strip()
+            self.screen_name = os.getenv("SALESIQ_SCREEN_NAME", "rtdsportal").strip()
             
-            # Use official Visitor API endpoint from documentation
-            self.base_url = f"https://salesiq.zoho.in/api/visitor/v1/{self.screen_name}"
+            # Build API URL safely
+            if self.screen_name:
+                self.base_url = f"https://salesiq.zoho.in/api/visitor/v1/{self.screen_name}"
+            
+            # Enable only if we have minimum required config
             self.enabled = bool(self.access_token and self.department_id)
             
             if not self.enabled:
-                logger.warning("SalesIQ API not configured - transfers will be simulated")
+                logger.warning("SalesIQ API not configured - missing token or department_id")
             else:
-                logger.info(f"SalesIQ Visitor API configured - screen: {self.screen_name}, department: {self.department_id}")
-                # Validate token format
-                if self.access_token and not self.access_token.startswith("1000."):
-                    logger.warning("SalesIQ token format may be incorrect")
+                logger.info(f"SalesIQ API configured - department: {self.department_id}")
+                
         except Exception as e:
             logger.error(f"Error initializing SalesIQ API: {str(e)}")
             self.enabled = False
-            self.access_token = None
-            self.department_id = None
     
     def create_chat_session(self, visitor_id: str, conversation_history: str) -> Dict:
         """Create new conversation using official SalesIQ Visitor API"""
@@ -168,24 +176,25 @@ class ZohoDeskAPI:
     """Zoho Desk API Integration for ticket creation"""
     
     def __init__(self):
+        # Initialize with safe defaults
+        self.enabled = False
+        self.access_token = None
+        self.org_id = None
+        self.base_url = "https://desk.zoho.in/api/v1"
+        
         try:
-            # Use the same access token from SalesIQ (it has Desk.tickets.ALL scope)
-            self.access_token = os.getenv("SALESIQ_ACCESS_TOKEN")
-            self.org_id = os.getenv("DESK_ORGANIZATION_ID")
-            # Use Indian API domain to match SalesIQ
-            self.base_url = "https://desk.zoho.in/api/v1"
-            # Disable Desk API for now - testing SalesIQ first
-            self.enabled = False  # bool(self.access_token and self.org_id)
+            # Safely get environment variables
+            self.access_token = os.getenv("SALESIQ_ACCESS_TOKEN", "").strip()
+            self.org_id = os.getenv("DESK_ORGANIZATION_ID", "").strip()
             
-            if not self.enabled:
-                logger.warning("Desk API disabled for testing - ticket creation will be simulated")
-            else:
-                logger.info("Desk API configured with Indian domain")
+            # Keep Desk API disabled for now - focus on SalesIQ first
+            self.enabled = False
+            
+            logger.warning("Desk API disabled - ticket creation will be simulated")
+            
         except Exception as e:
             logger.error(f"Error initializing Desk API: {str(e)}")
             self.enabled = False
-            self.access_token = None
-            self.org_id = None
     
     def create_callback_ticket(self, 
                               user_email: str,

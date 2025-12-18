@@ -38,27 +38,47 @@ LLM_MODEL = "gpt-4o-mini"
 
 conversations: Dict[str, List[Dict]] = {}
 
-# Import Zoho API integration with error handling
+# Safe API integration with comprehensive error handling
+class FallbackAPI:
+    def __init__(self):
+        self.enabled = False
+    def create_chat_session(self, *args, **kwargs):
+        return {"success": True, "simulated": True, "message": "API fallback - simulated transfer"}
+    def close_chat(self, *args, **kwargs):
+        return {"success": True, "simulated": True, "message": "API fallback - simulated closure"}
+    def create_callback_ticket(self, *args, **kwargs):
+        return {"success": True, "simulated": True, "ticket_number": "FALLBACK-CB-001"}
+    def create_support_ticket(self, *args, **kwargs):
+        return {"success": True, "simulated": True, "ticket_number": "FALLBACK-TK-001"}
+
+# Try to load real API integration, fallback if any issues
 try:
+    logger.info("Attempting to load Zoho API integration...")
     from zoho_api_integration import ZohoSalesIQAPI, ZohoDeskAPI
-    salesiq_api = ZohoSalesIQAPI()
-    desk_api = ZohoDeskAPI()
-    logger.info("Zoho API integration loaded successfully")
-except Exception as e:
-    logger.error(f"Failed to load Zoho API integration: {str(e)}")
-    # Create fallback objects that always simulate
-    class FallbackAPI:
-        def __init__(self):
-            self.enabled = False
-        def create_chat_session(self, *args, **kwargs):
-            return {"success": True, "simulated": True, "message": "API unavailable - simulated"}
-        def close_chat(self, *args, **kwargs):
-            return {"success": True, "simulated": True, "message": "API unavailable - simulated"}
-        def create_callback_ticket(self, *args, **kwargs):
-            return {"success": True, "simulated": True, "ticket_number": "FALLBACK-001"}
-        def create_support_ticket(self, *args, **kwargs):
-            return {"success": True, "simulated": True, "ticket_number": "FALLBACK-001"}
     
+    # Initialize with error handling
+    try:
+        salesiq_api = ZohoSalesIQAPI()
+        logger.info(f"SalesIQ API initialized: enabled={salesiq_api.enabled}")
+    except Exception as e:
+        logger.error(f"SalesIQ API initialization failed: {str(e)}")
+        salesiq_api = FallbackAPI()
+    
+    try:
+        desk_api = ZohoDeskAPI()
+        logger.info(f"Desk API initialized: enabled={desk_api.enabled}")
+    except Exception as e:
+        logger.error(f"Desk API initialization failed: {str(e)}")
+        desk_api = FallbackAPI()
+        
+    logger.info("Zoho API integration loaded successfully")
+    
+except ImportError as e:
+    logger.error(f"Failed to import Zoho API module: {str(e)}")
+    salesiq_api = FallbackAPI()
+    desk_api = FallbackAPI()
+except Exception as e:
+    logger.error(f"Unexpected error loading Zoho API: {str(e)}")
     salesiq_api = FallbackAPI()
     desk_api = FallbackAPI()
 
@@ -758,10 +778,11 @@ async def health():
         "status": "healthy",
         "openai": "connected",
         "active_sessions": len(conversations),
-        "salesiq_api": "enabled" if salesiq_api.enabled else "disabled",
-        "desk_api": "enabled" if desk_api.enabled else "disabled",
+        "salesiq_api": "enabled" if getattr(salesiq_api, 'enabled', False) else "disabled",
+        "desk_api": "enabled" if getattr(desk_api, 'enabled', False) else "disabled",
         "salesiq_token": "configured" if getattr(salesiq_api, 'access_token', None) else "missing",
-        "department_id": getattr(salesiq_api, 'department_id', 'missing')
+        "department_id": getattr(salesiq_api, 'department_id', 'missing'),
+        "webhook_url": "https://web-production-3032d.up.railway.app/webhook/salesiq"
     }
 
 @app.post("/webhook/salesiq")
