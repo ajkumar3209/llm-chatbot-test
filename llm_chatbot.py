@@ -774,7 +774,7 @@ async def health():
         "api_status": {
             "salesiq_enabled": salesiq_api.enabled if hasattr(salesiq_api, 'enabled') else False,
             "desk_enabled": desk_api.enabled if hasattr(desk_api, 'enabled') else False
-        }
+        },
         "webhook_url": "https://web-production-3032d.up.railway.app/webhook/salesiq"
     }
 
