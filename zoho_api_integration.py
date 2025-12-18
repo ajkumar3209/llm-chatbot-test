@@ -15,16 +15,26 @@ class ZohoSalesIQAPI:
     """Zoho SalesIQ API Integration for chat transfers"""
     
     def __init__(self):
-        self.access_token = os.getenv("SALESIQ_ACCESS_TOKEN")
-        self.department_id = os.getenv("SALESIQ_DEPARTMENT_ID")
-        # Use Indian API domain as provided by your manager
-        self.base_url = "https://salesiq.zoho.in/api/v2"
-        self.enabled = bool(self.access_token)
-        
-        if not self.enabled:
-            logger.warning("SalesIQ API not configured - transfers will be simulated")
-        else:
-            logger.info("SalesIQ API configured with Indian domain")
+        try:
+            self.access_token = os.getenv("SALESIQ_ACCESS_TOKEN")
+            self.department_id = os.getenv("SALESIQ_DEPARTMENT_ID")
+            # Use Indian API domain with portal-specific endpoint
+            self.base_url = "https://salesiq.zoho.in/api/v2"
+            # Alternative portal-specific URL if needed: https://salesiq.zoho.in/rtdsportal/api/v2
+            self.enabled = bool(self.access_token)
+            
+            if not self.enabled:
+                logger.warning("SalesIQ API not configured - transfers will be simulated")
+            else:
+                logger.info(f"SalesIQ API configured with Indian domain, department: {self.department_id}")
+                # Validate token format
+                if self.access_token and not self.access_token.startswith("1000."):
+                    logger.warning("SalesIQ token format may be incorrect")
+        except Exception as e:
+            logger.error(f"Error initializing SalesIQ API: {str(e)}")
+            self.enabled = False
+            self.access_token = None
+            self.department_id = None
     
     def create_chat_session(self, visitor_id: str, conversation_history: str) -> Dict:
         """Create new chat session and transfer to agent"""
@@ -48,6 +58,8 @@ class ZohoSalesIQAPI:
             "conversation_history": conversation_history,
             "transfer_to": "human_agent"
         }
+        
+        logger.info(f"SalesIQ payload: visitor_id={visitor_id}, department_id={self.department_id}")
         
         try:
             logger.info(f"Creating SalesIQ chat session for visitor {visitor_id}")
@@ -146,18 +158,24 @@ class ZohoDeskAPI:
     """Zoho Desk API Integration for ticket creation"""
     
     def __init__(self):
-        # Use the same access token from SalesIQ (it has Desk.tickets.ALL scope)
-        self.access_token = os.getenv("SALESIQ_ACCESS_TOKEN")
-        self.org_id = os.getenv("DESK_ORGANIZATION_ID")
-        # Use Indian API domain to match SalesIQ
-        self.base_url = "https://desk.zoho.in/api/v1"
-        # Disable Desk API for now - testing SalesIQ first
-        self.enabled = False  # bool(self.access_token and self.org_id)
-        
-        if not self.enabled:
-            logger.warning("Desk API disabled for testing - ticket creation will be simulated")
-        else:
-            logger.info("Desk API configured with Indian domain")
+        try:
+            # Use the same access token from SalesIQ (it has Desk.tickets.ALL scope)
+            self.access_token = os.getenv("SALESIQ_ACCESS_TOKEN")
+            self.org_id = os.getenv("DESK_ORGANIZATION_ID")
+            # Use Indian API domain to match SalesIQ
+            self.base_url = "https://desk.zoho.in/api/v1"
+            # Disable Desk API for now - testing SalesIQ first
+            self.enabled = False  # bool(self.access_token and self.org_id)
+            
+            if not self.enabled:
+                logger.warning("Desk API disabled for testing - ticket creation will be simulated")
+            else:
+                logger.info("Desk API configured with Indian domain")
+        except Exception as e:
+            logger.error(f"Error initializing Desk API: {str(e)}")
+            self.enabled = False
+            self.access_token = None
+            self.org_id = None
     
     def create_callback_ticket(self, 
                               user_email: str,

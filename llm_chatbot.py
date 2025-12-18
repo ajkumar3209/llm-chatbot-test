@@ -38,11 +38,29 @@ LLM_MODEL = "gpt-4o-mini"
 
 conversations: Dict[str, List[Dict]] = {}
 
-# Import Zoho API integration
-from zoho_api_integration import ZohoSalesIQAPI, ZohoDeskAPI
-
-salesiq_api = ZohoSalesIQAPI()
-desk_api = ZohoDeskAPI()
+# Import Zoho API integration with error handling
+try:
+    from zoho_api_integration import ZohoSalesIQAPI, ZohoDeskAPI
+    salesiq_api = ZohoSalesIQAPI()
+    desk_api = ZohoDeskAPI()
+    logger.info("Zoho API integration loaded successfully")
+except Exception as e:
+    logger.error(f"Failed to load Zoho API integration: {str(e)}")
+    # Create fallback objects that always simulate
+    class FallbackAPI:
+        def __init__(self):
+            self.enabled = False
+        def create_chat_session(self, *args, **kwargs):
+            return {"success": True, "simulated": True, "message": "API unavailable - simulated"}
+        def close_chat(self, *args, **kwargs):
+            return {"success": True, "simulated": True, "message": "API unavailable - simulated"}
+        def create_callback_ticket(self, *args, **kwargs):
+            return {"success": True, "simulated": True, "ticket_number": "FALLBACK-001"}
+        def create_support_ticket(self, *args, **kwargs):
+            return {"success": True, "simulated": True, "ticket_number": "FALLBACK-001"}
+    
+    salesiq_api = FallbackAPI()
+    desk_api = FallbackAPI()
 
 class Message(BaseModel):
     role: str
@@ -739,7 +757,11 @@ async def health():
     return {
         "status": "healthy",
         "openai": "connected",
-        "active_sessions": len(conversations)
+        "active_sessions": len(conversations),
+        "salesiq_api": "enabled" if salesiq_api.enabled else "disabled",
+        "desk_api": "enabled" if desk_api.enabled else "disabled",
+        "salesiq_token": "configured" if getattr(salesiq_api, 'access_token', None) else "missing",
+        "department_id": getattr(salesiq_api, 'department_id', 'missing')
     }
 
 @app.post("/webhook/salesiq")
