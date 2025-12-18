@@ -55,12 +55,12 @@ class FallbackAPI:
         logger.info("[API] Fallback: Simulating support ticket creation")
         return {"success": True, "simulated": True, "ticket_number": "TK-SIM-001"}
 
-# Try to load real Zoho API integration
+# Load simple Zoho API integration
 try:
-    from zoho_api_integration import ZohoSalesIQAPI, ZohoDeskAPI
+    from zoho_api_simple import ZohoSalesIQAPI, ZohoDeskAPI
     salesiq_api = ZohoSalesIQAPI()
     desk_api = ZohoDeskAPI()
-    logger.info(f"Zoho API loaded - SalesIQ enabled: {salesiq_api.enabled}, Desk enabled: {desk_api.enabled}")
+    logger.info(f"Simple Zoho API loaded - SalesIQ enabled: {salesiq_api.enabled}")
 except Exception as e:
     logger.error(f"Failed to load Zoho API: {str(e)} - using fallback")
     salesiq_api = FallbackAPI()
