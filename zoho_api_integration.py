@@ -30,9 +30,8 @@ class ZohoSalesIQAPI:
             self.app_id = os.getenv("SALESIQ_APP_ID", "").strip()
             self.screen_name = os.getenv("SALESIQ_SCREEN_NAME", "rtdsportal").strip()
             
-            # Build API URL safely
-            if self.screen_name:
-                self.base_url = f"https://salesiq.zoho.in/api/visitor/v1/{self.screen_name}"
+            # Use Operator API instead of Visitor API (token has operator scopes)
+            self.base_url = "https://salesiq.zoho.in/api/v2"
             
             # Enable only if we have minimum required config
             self.enabled = bool(self.access_token and self.department_id)
@@ -62,27 +61,20 @@ class ZohoSalesIQAPI:
             "Content-Type": "application/json"
         }
         
-        # Official Visitor API payload structure from documentation
+        # Use Operator API payload structure (token has operator scopes)
         payload = {
-            "visitor": {
-                "user_id": visitor_id,
-                "name": "Chat User",
-                "email": "support@acecloudhosting.com",
-                "platform": "WebBot",
-                "current_page": "https://acecloudhosting.com/support",
-                "page_title": "Support Chat"
-            },
-            "app_id": self.app_id or "default_app_id",
-            "question": conversation_history,
-            "department_id": self.department_id
+            "visitor_id": visitor_id,
+            "department_id": self.department_id,
+            "conversation_history": conversation_history,
+            "message": "User requesting chat transfer"
         }
         
-        logger.info(f"SalesIQ Visitor API payload: user_id={visitor_id}, department_id={self.department_id}")
+        logger.info(f"SalesIQ Operator API payload: visitor_id={visitor_id}, department_id={self.department_id}")
         
         try:
-            logger.info(f"Creating SalesIQ conversation for visitor {visitor_id}")
+            logger.info(f"Creating SalesIQ chat session for visitor {visitor_id}")
             response = requests.post(
-                f"{self.base_url}/conversations",  # Official endpoint from docs
+                f"{self.base_url}/chats",  # Operator API endpoint
                 json=payload,
                 headers=headers,
                 timeout=10
