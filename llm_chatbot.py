@@ -932,25 +932,33 @@ async def salesiq_webhook(request: dict):
         # Check for not resolved
         not_resolved_keywords = ["not resolved", "not fixed", "not working", "didn't work", "still not", "still stuck"]
         if any(keyword in message_lower for keyword in not_resolved_keywords):
-            logger.info(f"[SalesIQ] Issue NOT resolved - offering 3 options")
-            response_text = """I understand this is frustrating. Here are 3 ways I can help:
-
-1️⃣ **Instant Chat** - Connect with a human agent now
-   Reply: "1" or "instant chat"
-
-2️⃣ **Schedule Callback** - We'll call you back at a convenient time
-   Reply: "2" or "callback"
-
-3️⃣ **Create Support Ticket** - We'll create a detailed ticket and follow up
-   Reply: "3" or "ticket"
-
-Which option works best for you?"""
+            logger.info(f"[SalesIQ] Issue NOT resolved - offering 3 options with interactive buttons")
+            response_text = "I understand this is frustrating. Here are 3 ways I can help:"
+            
             # Add to history so next response can find it
             conversations[session_id].append({"role": "user", "content": message_text})
             conversations[session_id].append({"role": "assistant", "content": response_text})
+            
             return {
                 "action": "reply",
                 "replies": [response_text],
+                "suggestions": [
+                    {
+                        "text": "📞 Instant Chat",
+                        "action_type": "reply",
+                        "action_value": "1"
+                    },
+                    {
+                        "text": "📅 Schedule Callback",
+                        "action_type": "reply",
+                        "action_value": "2"
+                    },
+                    {
+                        "text": "🎫 Create Ticket",
+                        "action_type": "reply",
+                        "action_value": "3"
+                    }
+                ],
                 "session_id": session_id
             }
         
@@ -1018,15 +1026,21 @@ Which option works best for you?"""
         # Check for option selections - INSTANT CHAT
         if "instant chat" in message_lower or "option 1" in message_lower or message_lower == "1" or "chat/transfer" in message_lower or payload == "option_1":
             logger.info(f"[SalesIQ] User selected: Instant Chat Transfer")
-            # Build conversation history for agent to see
-            conversation_text = ""
-            for msg in history:
-                role = "User" if msg.get('role') == 'user' else "Bot"
-                conversation_text += f"{role}: {msg.get('content', '')}\n"
             
-            # Call SalesIQ API to create chat session
-            api_result = salesiq_api.create_chat_session(session_id, conversation_text)
-            logger.info(f"[SalesIQ] API result: {api_result}")
+            try:
+                # Build conversation history for agent to see
+                conversation_text = ""
+                for msg in history:
+                    role = "User" if msg.get('role') == 'user' else "Bot"
+                    conversation_text += f"{role}: {msg.get('content', '')}\n"
+                
+                # Call SalesIQ API to create chat session
+                logger.info(f"[SalesIQ] Calling create_chat_session API...")
+                api_result = salesiq_api.create_chat_session(session_id, conversation_text)
+                logger.info(f"[SalesIQ] API result: {api_result}")
+            except Exception as api_error:
+                logger.error(f"[SalesIQ] API call failed: {str(api_error)}")
+                logger.error(f"[SalesIQ] Traceback: {traceback.format_exc()}")
             
             # SalesIQ webhooks only support "reply" action, not "transfer"
             # The transfer happens through the SalesIQ API call above
@@ -1126,24 +1140,32 @@ Thank you for contacting Ace Cloud Hosting!"""
         # Check for agent connection requests (legacy)
         agent_request_phrases = ["connect me to agent", "connect to agent", "human agent", "talk to human", "speak to agent"]
         if any(phrase in message_lower for phrase in agent_request_phrases):
-            logger.info(f"[SalesIQ] User requesting human agent")
-            response_text = """I can help you with that. Here are your options:
-
-1️⃣ **Instant Chat** - Connect with a human agent now
-   Reply: "1" or "instant chat"
-
-2️⃣ **Schedule Callback** - We'll call you back at a convenient time
-   Reply: "2" or "callback"
-
-3️⃣ **Create Support Ticket** - We'll create a detailed ticket and follow up
-   Reply: "3" or "ticket"
-
-Which option works best for you?"""
+            logger.info(f"[SalesIQ] User requesting human agent - offering options with interactive buttons")
+            response_text = "I can help you with that. Here are your options:"
+            
             conversations[session_id].append({"role": "user", "content": message_text})
             conversations[session_id].append({"role": "assistant", "content": response_text})
+            
             return {
                 "action": "reply",
                 "replies": [response_text],
+                "suggestions": [
+                    {
+                        "text": "📞 Instant Chat",
+                        "action_type": "reply",
+                        "action_value": "1"
+                    },
+                    {
+                        "text": "📅 Schedule Callback",
+                        "action_type": "reply",
+                        "action_value": "2"
+                    },
+                    {
+                        "text": "🎫 Create Ticket",
+                        "action_type": "reply",
+                        "action_value": "3"
+                    }
+                ],
                 "session_id": session_id
             }
         
