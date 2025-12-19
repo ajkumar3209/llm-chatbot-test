@@ -49,7 +49,8 @@ class ZohoSalesIQAPI:
         import requests
         
         headers = {
-            "Authorization": f"Bearer {self.access_token}",
+            # Per SalesIQ docs, use Zoho-oauthtoken (not Bearer)
+            "Authorization": f"Zoho-oauthtoken {self.access_token}",
             "Content-Type": "application/json"
         }
         

@@ -57,7 +57,7 @@ class ZohoSalesIQAPI:
             }
         
         headers = {
-            "Authorization": f"Bearer {self.access_token}",
+            "Authorization": f"Zoho-oauthtoken {self.access_token}",
             "Content-Type": "application/json"
         }
         
