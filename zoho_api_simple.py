@@ -83,7 +83,7 @@ class ZohoSalesIQAPI:
         endpoint = f"{self.base_url}/conversations"
         logger.info(f"SalesIQ: Operator API v2 call - POST {endpoint}")
         logger.info(
-            f"SalesIQ: Payload: visitor_id={effective_visitor_id}, dept={effective_department_id}, name={visitor_name}, tag_id={self.default_tag_id}"
+            f"SalesIQ: Payload: visitor_id={effective_visitor_id}, dept={effective_department_id}, name={visitor_name}, ids=[{self.default_tag_id}]"
         )
         
         try:
