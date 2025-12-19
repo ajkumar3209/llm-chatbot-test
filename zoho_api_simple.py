@@ -77,7 +77,7 @@ class ZohoSalesIQAPI:
             "email": visitor_email,
             "department_id": effective_department_id,
             "question": conversation_history or "User requested human assistance",
-            "tag_ids": [int(self.default_tag_id)]
+            "ids": [int(self.default_tag_id)]
         }
         
         endpoint = f"{self.base_url}/conversations"
