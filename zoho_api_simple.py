@@ -19,18 +19,15 @@ class ZohoSalesIQAPI:
         self.app_id = os.getenv("SALESIQ_APP_ID", "").strip()
         self.screen_name = os.getenv("SALESIQ_SCREEN_NAME", "rtdsportal").strip()
         
-        # Base URL for Operator API v2 (accepts OAuth tokens)
-        self.base_url = f"https://salesiq.zoho.in/api/v2/{self.screen_name}"
-        self.org_id = os.getenv("SALESIQ_ORG_ID", "60000687661").strip()
-        # Default tag id for conversations (required by Operator API)
-        self.default_tag_id = os.getenv("SALESIQ_DEFAULT_TAG_ID", "2782000005718505").strip()
+        # Base URL for Visitor API v1 (official endpoint per API docs)
+        self.base_url = f"https://salesiq.zoho.in/api/visitor/v1/{self.screen_name}"
         
         # Enable only if required config exists
         self.enabled = bool(self.access_token and self.department_id and self.app_id)
         if self.enabled:
-            logger.info(f"SalesIQ Operator API v2 configured - department: {self.department_id}, app_id: {self.app_id}, screen: {self.screen_name}, org: {self.org_id}, default_tag_id: {self.default_tag_id}")
+            logger.info(f"SalesIQ Visitor API v1 configured - department: {self.department_id}, app_id: {self.app_id}, screen: {self.screen_name}")
         else:
-            logger.warning(f"SalesIQ Operator API not fully configured - token: {bool(self.access_token)}, dept: {bool(self.department_id)}, app_id: {bool(self.app_id)}, screen: {bool(self.screen_name)}")
+            logger.warning(f"SalesIQ Visitor API not fully configured - token: {bool(self.access_token)}, dept: {bool(self.department_id)}, app_id: {bool(self.app_id)}, screen: {bool(self.screen_name)}")
     
     def create_chat_session(
         self,
@@ -43,47 +40,66 @@ class ZohoSalesIQAPI:
     ) -> Dict:
         """Create a conversation via Visitor API to route to an agent.
         Allows overriding app_id/department_id/visitor_info from inbound webhook payload.
+        
+        IMPORTANT: Cannot use bot preview visitor IDs (botpreview_...).
+        Must use real visitor IDs from actual chat widget interactions.
         """
         
         if not self.enabled:
             logger.info(f"SalesIQ: API disabled - simulating transfer for {visitor_id}")
             return {"success": True, "simulated": True, "message": "Transfer simulated"}
         
+        # Reject bot preview IDs - they cannot be transferred
+        if str(visitor_id).startswith("botpreview_"):
+            logger.warning(f"SalesIQ: Cannot transfer bot preview session {visitor_id}. Need real visitor ID from actual chat widget.")
+            return {
+                "success": False,
+                "error": "invalid_visitor_id",
+                "details": "Bot preview sessions cannot be transferred. This is a SalesIQ limitation. Test with real visitor ID only."
+            }
+        
         import requests
         
         headers = {
             "Authorization": f"Zoho-oauthtoken {self.access_token}",
-            "Content-Type": "application/json",
-            "orgId": self.org_id
+            "Content-Type": "application/json"
         }
         
         # Effective configuration (prefer overrides from webhook)
+        effective_app_id = str(app_id or self.app_id).strip()
         effective_department_id = str(department_id or self.department_id).strip()
 
         # Extract visitor details from visitor_info or use defaults
+        visitor_user_id = str(visitor_id).strip()
         visitor_name = "Chat User"
         visitor_email = "support@acecloudhosting.com"
-        effective_visitor_id = visitor_id
         
         if visitor_info:
-            effective_visitor_id = str(visitor_info.get("id") or visitor_id)
+            # Prefer "email" as user_id if available (most reliable unique ID)
+            visitor_user_id = visitor_info.get("email") or visitor_info.get("user_id") or visitor_user_id
             visitor_name = visitor_info.get("name") or visitor_info.get("email", "Chat User")
             visitor_email = visitor_info.get("email", "support@acecloudhosting.com")
 
-        # Operator API v2 payload structure
+        # Visitor API v1 payload structure per official documentation
         payload: Dict = {
-            "visitor_id": effective_visitor_id,
-            "name": visitor_name,
-            "email": visitor_email,
+            "app_id": effective_app_id,
             "department_id": effective_department_id,
             "question": conversation_history or "User requested human assistance",
-            "ids": [int(self.default_tag_id)]
+            "visitor": {
+                "user_id": visitor_user_id,
+                "name": visitor_name,
+                "email": visitor_email
+            }
         }
         
+        # Add optional custom_wait_time if provided
+        if custom_wait_time is not None:
+            payload["custom_wait_time"] = custom_wait_time
+        
         endpoint = f"{self.base_url}/conversations"
-        logger.info(f"SalesIQ: Operator API v2 call - POST {endpoint}")
+        logger.info(f"SalesIQ: Visitor API v1 call - POST {endpoint}")
         logger.info(
-            f"SalesIQ: Payload: visitor_id={effective_visitor_id}, dept={effective_department_id}, name={visitor_name}, ids=[{self.default_tag_id}]"
+            f"SalesIQ: Payload - app_id={effective_app_id}, dept={effective_department_id}, visitor_user_id={visitor_user_id}, visitor_email={visitor_email}"
         )
         
         try:
@@ -100,7 +116,7 @@ class ZohoSalesIQAPI:
             else:
                 return {"success": False, "error": f"{response.status_code}", "details": response.text}
         except Exception as e:
-            logger.error(f"SalesIQ: Operator API exception: {str(e)}")
+            logger.error(f"SalesIQ: Visitor API exception: {str(e)}")
             return {"success": False, "error": "exception", "details": str(e)}
     
     def close_chat(self, session_id: str, reason: str = "resolved") -> Dict:

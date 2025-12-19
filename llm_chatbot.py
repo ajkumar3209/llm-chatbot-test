@@ -1062,12 +1062,15 @@ async def salesiq_webhook(request: dict):
                 override_app_id = req_meta.get('app_id') or getattr(salesiq_api, 'app_id', None)
                 override_department_id = visitor.get('department_id') if isinstance(visitor, dict) else None
                 
+                # Extract visitor email as unique identifier (more reliable than IDs)
+                visitor_email = visitor.get('email', 'support@acecloudhosting.com') if isinstance(visitor, dict) else 'support@acecloudhosting.com'
+                
                 # Call SalesIQ API (Visitor API) to create conversation and route to agent
-                logger.info(f"[SalesIQ] Calling create_chat_session API with overrides app_id={override_app_id}, dept={override_department_id}")
-                # Prefer real visitor id for Operator API
-                effective_visitor_id = str(visitor.get('id') or session_id)
+                logger.info(f"[SalesIQ] Calling create_chat_session API with overrides app_id={override_app_id}, dept={override_department_id}, visitor_email={visitor_email}")
+                
+                # Pass visitor email as user_id (most reliable unique identifier per API docs)
                 api_result = salesiq_api.create_chat_session(
-                    effective_visitor_id,
+                    visitor_email,  # Use email as unique user_id per API documentation
                     conversation_text,
                     app_id=override_app_id,
                     department_id=str(override_department_id) if override_department_id else None,
@@ -1349,14 +1352,19 @@ async def list_sessions():
 # -----------------------------------------------------------
 @app.get("/test/salesiq-transfer")
 async def test_salesiq_transfer_get():
-    """Quick GET test to exercise Visitor API with env defaults"""
+    """Quick GET test to exercise Visitor API with env defaults.
+    
+    IMPORTANT: Cannot use bot preview IDs (botpreview_...).
+    This endpoint uses a real-looking email-based user ID for testing.
+    """
     try:
-        session_id = f"test_{int(datetime.now().timestamp())}"
+        # Use email as user_id (most reliable per API docs) instead of session ID
+        test_user_id = "test.visitor@acecloudhosting.com"
         conversation_text = "Test transfer from GET endpoint"
-        logger.info(f"[Test] Initiating SalesIQ transfer (GET) for session {session_id}")
-        result = salesiq_api.create_chat_session(session_id, conversation_text)
+        logger.info(f"[Test] Initiating SalesIQ Visitor API transfer (GET) with user_id={test_user_id}")
+        result = salesiq_api.create_chat_session(test_user_id, conversation_text)
         return {
-            "session_id": session_id,
+            "user_id": test_user_id,
             "result": result
         }
     except Exception as e:
@@ -1366,10 +1374,21 @@ async def test_salesiq_transfer_get():
 @app.post("/test/salesiq-transfer")
 async def test_salesiq_transfer_post(payload: Dict):
     """POST test to exercise Visitor API with overrides from payload.
-    Accepts: session_id, conversation, app_id, department_id, visitor, custom_wait_time
+    
+    Accepts:
+    - visitor_user_id: Unique identifier for visitor (use email, not botpreview_...)
+    - conversation: Conversation text for agent
+    - app_id: Override app_id
+    - department_id: Override department_id
+    - visitor: Full visitor info dict
+    - custom_wait_time: Custom wait time
+    
+    IMPORTANT: visitor_user_id cannot be botpreview_... IDs.
+    Use real email addresses or unique identifiers.
     """
     try:
-        session_id = str(payload.get("session_id") or f"test_{int(datetime.now().timestamp())}")
+        # Use email as user_id (more reliable than session IDs)
+        visitor_user_id = str(payload.get("visitor_user_id") or "test.visitor@acecloudhosting.com")
         conversation_text = str(payload.get("conversation") or "Test transfer from POST endpoint")
         app_id = payload.get("app_id")
         department_id = payload.get("department_id")
@@ -1377,10 +1396,10 @@ async def test_salesiq_transfer_post(payload: Dict):
         custom_wait_time = payload.get("custom_wait_time")
 
         logger.info(
-            f"[Test] Initiating SalesIQ transfer (POST) for session {session_id} with app_id={app_id}, dept={department_id}"
+            f"[Test] Initiating SalesIQ Visitor API transfer (POST) for user_id={visitor_user_id} with app_id={app_id}, dept={department_id}"
         )
         result = salesiq_api.create_chat_session(
-            session_id,
+            visitor_user_id,  # Use as unique user_id per API documentation
             conversation_text,
             app_id=app_id,
             department_id=str(department_id) if department_id is not None else None,
@@ -1388,7 +1407,7 @@ async def test_salesiq_transfer_post(payload: Dict):
             custom_wait_time=custom_wait_time,
         )
         return {
-            "session_id": session_id,
+            "user_id": visitor_user_id,
             "result": result
         }
     except Exception as e:
