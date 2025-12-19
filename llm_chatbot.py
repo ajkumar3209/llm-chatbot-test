@@ -1,5 +1,6 @@
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict
@@ -788,6 +789,28 @@ async def salesiq_webhook_test():
         "note": "POST requests will be processed as chat messages"
     }
 
+@app.get("/test/widget", response_class=HTMLResponse)
+async def test_widget():
+    """Public test page to load SalesIQ widget for real visitor testing.
+    Set SALESIQ_WIDGET_CODE env var to your SalesIQ embed snippet.
+    """
+    widget_code = os.getenv("SALESIQ_WIDGET_CODE", "").strip()
+    if not widget_code:
+        return (
+            "<!doctype html><html><head><meta charset='utf-8'><title>SalesIQ Test</title></head>"
+            "<body><h2>SalesIQ Widget Test</h2>"
+            "<p>Set the SALESIQ_WIDGET_CODE env var with your SalesIQ embed snippet to load the widget here.</p>"
+            "<p>This page is served from your Railway app and counts as a real website visitor.</p>"
+            "</body></html>"
+        )
+    html = (
+        "<!doctype html><html><head><meta charset='utf-8'><title>SalesIQ Test</title></head><body>"
+        "<h2>SalesIQ Widget Live Test</h2><p>This page is public and will register real visitors.</p>"
+        + widget_code +
+        "</body></html>"
+    )
+    return html
+
 @app.post("/webhook/salesiq")
 async def salesiq_webhook(request: dict):
     """Direct webhook endpoint for Zoho SalesIQ - Hybrid LLM"""
@@ -1041,8 +1064,10 @@ async def salesiq_webhook(request: dict):
                 
                 # Call SalesIQ API (Visitor API) to create conversation and route to agent
                 logger.info(f"[SalesIQ] Calling create_chat_session API with overrides app_id={override_app_id}, dept={override_department_id}")
+                # Prefer real visitor id for Operator API
+                effective_visitor_id = str(visitor.get('id') or session_id)
                 api_result = salesiq_api.create_chat_session(
-                    session_id,
+                    effective_visitor_id,
                     conversation_text,
                     app_id=override_app_id,
                     department_id=str(override_department_id) if override_department_id else None,

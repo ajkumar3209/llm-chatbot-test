@@ -22,11 +22,13 @@ class ZohoSalesIQAPI:
         # Base URL for Operator API v2 (accepts OAuth tokens)
         self.base_url = f"https://salesiq.zoho.in/api/v2/{self.screen_name}"
         self.org_id = os.getenv("SALESIQ_ORG_ID", "60000687661").strip()
+        # Default tag id for conversations (required by Operator API)
+        self.default_tag_id = os.getenv("SALESIQ_DEFAULT_TAG_ID", "2782000005718505").strip()
         
         # Enable only if required config exists
         self.enabled = bool(self.access_token and self.department_id and self.app_id)
         if self.enabled:
-            logger.info(f"SalesIQ Operator API v2 configured - department: {self.department_id}, app_id: {self.app_id}, screen: {self.screen_name}, org: {self.org_id}")
+            logger.info(f"SalesIQ Operator API v2 configured - department: {self.department_id}, app_id: {self.app_id}, screen: {self.screen_name}, org: {self.org_id}, default_tag_id: {self.default_tag_id}")
         else:
             logger.warning(f"SalesIQ Operator API not fully configured - token: {bool(self.access_token)}, dept: {bool(self.department_id)}, app_id: {bool(self.app_id)}, screen: {bool(self.screen_name)}")
     
@@ -61,25 +63,27 @@ class ZohoSalesIQAPI:
         # Extract visitor details from visitor_info or use defaults
         visitor_name = "Chat User"
         visitor_email = "support@acecloudhosting.com"
+        effective_visitor_id = visitor_id
         
         if visitor_info:
+            effective_visitor_id = str(visitor_info.get("id") or visitor_id)
             visitor_name = visitor_info.get("name") or visitor_info.get("email", "Chat User")
             visitor_email = visitor_info.get("email", "support@acecloudhosting.com")
 
         # Operator API v2 payload structure
         payload: Dict = {
-            "visitor_id": visitor_id,
+            "visitor_id": effective_visitor_id,
             "name": visitor_name,
             "email": visitor_email,
             "department_id": effective_department_id,
             "question": conversation_history or "User requested human assistance",
-            "tag_ids": []  # Required field, empty array is valid
+            "tag_ids": [int(self.default_tag_id)]
         }
         
         endpoint = f"{self.base_url}/conversations"
         logger.info(f"SalesIQ: Operator API v2 call - POST {endpoint}")
         logger.info(
-            f"SalesIQ: Payload: visitor_id={visitor_id}, dept={effective_department_id}, name={visitor_name}"
+            f"SalesIQ: Payload: visitor_id={effective_visitor_id}, dept={effective_department_id}, name={visitor_name}, tag_id={self.default_tag_id}"
         )
         
         try:
@@ -96,7 +100,7 @@ class ZohoSalesIQAPI:
             else:
                 return {"success": False, "error": f"{response.status_code}", "details": response.text}
         except Exception as e:
-            logger.error(f"SalesIQ: Visitor API exception: {str(e)}")
+            logger.error(f"SalesIQ: Operator API exception: {str(e)}")
             return {"success": False, "error": "exception", "details": str(e)}
     
     def close_chat(self, session_id: str, reason: str = "resolved") -> Dict:
