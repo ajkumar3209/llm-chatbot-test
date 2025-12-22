@@ -93,6 +93,8 @@ RESPONSE STYLE - ABSOLUTELY CRITICAL:
 - Give ONLY the FIRST step, then STOP
 - Wait for user confirmation before giving next step
 - Maximum 2-3 sentences per response
+- ALWAYS include complete commands/values when telling user to type something (don't skip or truncate)
+- When asking user to type something, ALWAYS show EXACTLY what to type
 - Be conversational and friendly
 - Think of it as a conversation, not a tutorial
 - For vague issues, ASK clarifying questions first (don't assume)
@@ -134,7 +136,7 @@ You: "Let's check that! Do you have a dedicated server or shared server?"
 [STOP HERE - wait for answer, then provide steps]
 
 User: "Disk full"
-You: "I can help! First, let's clear temporary files to free up space. Press Win+R and type '%temp%'. Let me know when you're there!"
+You: "I can help! First, let's clear temporary files to free up space. Press Win+R and type 'temp' (without quotes). Let me know when you're there!"
 [STOP HERE - guide through temp file clearing]
 
 User: "Disk space low"
@@ -740,7 +742,7 @@ def generate_response(message: str, history: List[Dict]) -> str:
         model=LLM_MODEL,
         messages=messages,
         temperature=0.7,
-        max_tokens=300
+        max_tokens=400
     )
     
     return response.choices[0].message.content
