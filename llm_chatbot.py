@@ -779,6 +779,93 @@ async def health():
         "webhook_url": "https://web-production-3032d.up.railway.app/webhook/salesiq"
     }
 
+@app.get("/callback")
+async def oauth_callback(code: str = None, state: str = None, error: str = None):
+    """OAuth 2.0 callback endpoint for Zoho authorization"""
+    
+    if error:
+        html = f"""
+        <html>
+        <head><title>OAuth Error</title></head>
+        <body style="font-family: Arial; padding: 20px; background: #f5f5f5;">
+            <div style="background: #ffcccc; padding: 20px; border-radius: 5px; max-width: 500px; margin: 20px auto;">
+                <h2 style="color: #cc0000;">Authorization Failed</h2>
+                <p><strong>Error:</strong> {error}</p>
+                <p>Please try again or contact support.</p>
+            </div>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=html)
+    
+    if not code:
+        html = """
+        <html>
+        <head><title>OAuth Callback</title></head>
+        <body style="font-family: Arial; padding: 20px; background: #f5f5f5;">
+            <div style="background: #ffcccc; padding: 20px; border-radius: 5px; max-width: 500px; margin: 20px auto;">
+                <h2 style="color: #cc0000;">No Authorization Code Received</h2>
+                <p>The authorization code was not found in the callback URL.</p>
+                <p>Please try the authorization process again.</p>
+            </div>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=html)
+    
+    # Success - display the authorization code
+    html = f"""
+    <html>
+    <head><title>OAuth Authorization Success</title></head>
+    <body style="font-family: Arial; padding: 20px; background: #f5f5f5;">
+        <div style="background: #ccffcc; padding: 20px; border-radius: 5px; max-width: 600px; margin: 20px auto;">
+            <h2 style="color: #00cc00;">Authorization Successful!</h2>
+            <p>Your authorization code is ready. Copy the code below and use it in the token exchange step.</p>
+            
+            <div style="background: #ffffff; padding: 15px; border: 2px solid #00cc00; border-radius: 5px; margin: 20px 0;">
+                <h3>Authorization Code:</h3>
+                <code style="font-size: 14px; word-break: break-all; display: block; background: #f0f0f0; padding: 10px; border-radius: 3px;">
+                    {code}
+                </code>
+                <button onclick="navigator.clipboard.writeText('{code}'); alert('Code copied to clipboard!');" 
+                        style="margin-top: 10px; padding: 10px 20px; background: #00cc00; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                    Copy Code
+                </button>
+            </div>
+            
+            <p><strong>State:</strong> {state if state else 'N/A'}</p>
+            
+            <div style="background: #ffffcc; padding: 15px; border-radius: 5px; margin-top: 20px;">
+                <h3>Next Step:</h3>
+                <p>Run this PowerShell command to exchange the code for an access token:</p>
+                <pre style="background: #f0f0f0; padding: 10px; border-radius: 3px; overflow-x: auto;">
+$code = "{code}"
+$clientId = "YOUR_CLIENT_ID"
+$clientSecret = "YOUR_CLIENT_SECRET"
+$redirectUri = "http://localhost:8000/callback"
+
+$response = Invoke-RestMethod -Uri "https://accounts.zoho.in/oauth/v2/token" -Method POST -Body @{{
+    code = $code
+    grant_type = "authorization_code"
+    client_id = $clientId
+    client_secret = $clientSecret
+    redirect_uri = $redirectUri
+    scope = "SalesIQ.conversations.CREATE,SalesIQ.conversations.READ,SalesIQ.conversations.UPDATE,SalesIQ.conversations.DELETE"
+}}
+
+Write-Host "Access Token:"
+Write-Host $response.access_token
+                </pre>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    logger.info(f"[OAuth] Authorization successful - code received (state: {state})")
+    return HTMLResponse(content=html)
+
+
 @app.get("/webhook/salesiq")
 async def salesiq_webhook_test():
     """Test endpoint for SalesIQ webhook - GET request"""
