@@ -8,13 +8,19 @@ from typing import Dict
 
 logger = logging.getLogger(__name__)
 
+# Import token manager for automatic refresh
+from token_manager import get_token_manager
+
 
 class ZohoSalesIQAPI:
     """Simple SalesIQ API Integration (Visitor API)"""
     
     def __init__(self):
+        # Get token manager for automatic refresh
+        self.token_manager = get_token_manager()
+        
         # Load configuration
-        self.access_token = os.getenv("SALESIQ_ACCESS_TOKEN", "").strip()
+        self.access_token = self.token_manager.access_token
         self.department_id = os.getenv("SALESIQ_DEPARTMENT_ID", "").strip()
         self.app_id = os.getenv("SALESIQ_APP_ID", "").strip()
         self.screen_name = os.getenv("SALESIQ_SCREEN_NAME", "rtdsportal").strip()
@@ -60,8 +66,11 @@ class ZohoSalesIQAPI:
         
         import requests
         
+        # Get fresh token (auto-refreshes if expired)
+        valid_token = self.token_manager.get_valid_token()
+        
         headers = {
-            "Authorization": f"Zoho-oauthtoken {self.access_token}",
+            "Authorization": f"Zoho-oauthtoken {valid_token}",
             "Content-Type": "application/json"
         }
         
