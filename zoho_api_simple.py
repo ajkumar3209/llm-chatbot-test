@@ -22,7 +22,6 @@ class ZohoSalesIQAPI:
         self.token_manager = get_token_manager()
         
         # Load configuration
-        self.access_token = self.token_manager.access_token
         self.department_id = os.getenv("SALESIQ_DEPARTMENT_ID", "").strip()
         self.app_id = os.getenv("SALESIQ_APP_ID", "").strip()
         self.screen_name = os.getenv("SALESIQ_SCREEN_NAME", "rtdsportal").strip()
@@ -31,7 +30,7 @@ class ZohoSalesIQAPI:
         self.base_url = f"https://salesiq.zoho.in/api/visitor/v1/{self.screen_name}"
         
         # Enable only if required config exists
-        self.enabled = bool(self.access_token and self.department_id and self.app_id)
+        self.enabled = bool(self.token_manager.salesiq_access_token and self.department_id and self.app_id)
         if self.enabled:
             logger.info(f"SalesIQ Visitor API v1 configured - department: {self.department_id}, app_id: {self.app_id}, screen: {self.screen_name}")
         else:
@@ -69,7 +68,7 @@ class ZohoSalesIQAPI:
         import requests
         
         # Get fresh token (auto-refreshes if expired)
-        valid_token = self.token_manager.get_valid_token()
+        valid_token = self.token_manager.get_valid_salesiq_token()
         
         headers = {
             "Authorization": f"Zoho-oauthtoken {valid_token}",
@@ -145,18 +144,20 @@ class ZohoDeskAPI:
     """Zoho Desk API Integration - Create tickets and callbacks"""
     
     def __init__(self):
+        # Get token manager for automatic refresh
+        self.token_manager = get_token_manager()
+        
         # Load configuration
-        self.access_token = os.getenv("DESK_ACCESS_TOKEN", "").strip()
         self.organization_id = os.getenv("DESK_ORGANIZATION_ID", "").strip()
         self.api_url = os.getenv("DESK_API_URL", "https://desk.zoho.in/api/v1").strip()
         
         # Enable only if credentials exist
-        self.enabled = bool(self.access_token and self.organization_id)
+        self.enabled = bool(self.token_manager.desk_access_token and self.organization_id)
         
         if self.enabled:
             logger.info(f"Desk API configured - Org: {self.organization_id}")
         else:
-            logger.warning(f"Desk API not configured - token: {bool(self.access_token)}, org_id: {bool(self.organization_id)}")
+            logger.warning(f"Desk API not configured - token: {bool(self.token_manager.desk_access_token)}, org_id: {bool(self.organization_id)}")
     
     def create_support_ticket(
         self,
@@ -195,7 +196,7 @@ class ZohoDeskAPI:
         import requests
         
         headers = {
-            "Authorization": f"Zoho-oauthtoken {self.access_token}",
+            "Authorization": f"Zoho-oauthtoken {self.token_manager.get_valid_desk_token()}",
             "Content-Type": "application/json",
             "X-Orgn-Id": self.organization_id
         }
@@ -337,8 +338,9 @@ Time Submitted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         
         import requests
         
+        valid_token = self.token_manager.get_valid_desk_token()
         headers = {
-            "Authorization": f"Zoho-oauthtoken {self.access_token}",
+            "Authorization": f"Zoho-oauthtoken {valid_token}",
             "Content-Type": "application/json",
             "X-Orgn-Id": self.organization_id
         }

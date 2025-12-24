@@ -1044,8 +1044,8 @@ async def salesiq_webhook(request: dict):
         # Check for not resolved
         not_resolved_keywords = ["not resolved", "not fixed", "not working", "didn't work", "still not", "still stuck"]
         if any(keyword in message_lower for keyword in not_resolved_keywords):
-            logger.info(f"[SalesIQ] Issue NOT resolved - offering 3 options with interactive buttons")
-            response_text = "I understand this is frustrating. Here are 3 ways I can help:"
+            logger.info(f"[SalesIQ] Issue NOT resolved - offering 2 options with interactive buttons")
+            response_text = "I understand this is frustrating. Here are 2 ways I can help:"
             
             # Add to history so next response can find it
             conversations[session_id].append({"role": "user", "content": message_text})
