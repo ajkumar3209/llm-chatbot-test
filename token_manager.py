@@ -3,6 +3,7 @@ Zoho OAuth Token Manager - Handles automatic token refresh
 """
 
 import os
+import re
 import time
 import logging
 import requests
@@ -63,7 +64,7 @@ class ZohoTokenManager:
         
         return False
     
-    def refresh_token(self) -> bool:
+    def _do_refresh(self) -> bool:
         """Refresh the unified OAuth access token using refresh token (works for both APIs)"""
         with self.lock:
             if not self.refresh_token:
@@ -111,7 +112,7 @@ class ZohoTokenManager:
     def get_valid_token(self) -> str:
         """Get valid OAuth token, auto-refreshing if needed (works for both SalesIQ and Desk)"""
         if self.is_token_expired():
-            self.refresh_token()
+            self._do_refresh()
         return self.access_token
     
     # Backward compatibility aliases
