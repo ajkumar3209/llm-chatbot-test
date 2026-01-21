@@ -1052,7 +1052,7 @@ async def salesiq_webhook(request: dict):
             conversations[session_id].append({"role": "assistant", "content": response_text})
             
             return {
-                "action": "reply",
+                "action": "forward",
                 "replies": [response_text],
                 "suggestions": [
                     {
@@ -1130,7 +1130,7 @@ async def salesiq_webhook(request: dict):
             conversations[session_id].append({"role": "user", "content": message_text})
             conversations[session_id].append({"role": "assistant", "content": response_text})
             return {
-                "action": "reply",
+                "action": "forward",
                 "replies": [response_text],
                 "session_id": session_id
             }
@@ -1138,52 +1138,19 @@ async def salesiq_webhook(request: dict):
         # Check for option selections - INSTANT CHAT
         if "instant chat" in message_lower or "option 1" in message_lower or message_lower == "1" or "chat/transfer" in message_lower or payload == "option_1":
             logger.info(f"[SalesIQ] User selected: Instant Chat Transfer")
+            logger.info(f"[SalesIQ] Using FORWARD action (official SalesIQ bot forwarding mechanism)")
             
-            try:
-                # Build conversation history for agent to see
-                conversation_text = ""
-                for msg in history:
-                    role = "User" if msg.get('role') == 'user' else "Bot"
-                    conversation_text += f"{role}: {msg.get('content', '')}\n"
-                
-                # Prepare overrides from webhook payload
-                req_meta = request.get('request', {}) if isinstance(request, dict) else {}
-                override_app_id = req_meta.get('app_id') or getattr(salesiq_api, 'app_id', None)
-                override_department_id = visitor.get('department_id') if isinstance(visitor, dict) else None
-                
-                # Extract visitor email as unique identifier (more reliable than IDs)
-                visitor_email = visitor.get('email', 'support@acecloudhosting.com') if isinstance(visitor, dict) else 'support@acecloudhosting.com'
-                
-                # Call SalesIQ API (Visitor API) to create conversation and route to agent
-                logger.info(f"[SalesIQ] Calling create_chat_session API with overrides app_id={override_app_id}, dept={override_department_id}, visitor_email={visitor_email}")
-                
-                # Pass visitor email as user_id (most reliable unique identifier per API docs)
-                api_result = salesiq_api.create_chat_session(
-                    visitor_email,  # Use email as unique user_id per API documentation
-                    conversation_text,
-                    app_id=override_app_id,
-                    department_id=str(override_department_id) if override_department_id else None,
-                    visitor_info=visitor
-                )
-                logger.info(f"[SalesIQ] API result: {api_result}")
-            except Exception as api_error:
-                logger.error(f"[SalesIQ] API call failed: {str(api_error)}")
-                logger.error(f"[SalesIQ] Traceback: {traceback.format_exc()}")
+            # Use official SalesIQ "forward" action to hand off chat
+            # This is the CORRECT way per SalesIQ bot documentation
             
-            # SalesIQ webhooks only support "reply" action, not "transfer"
-            # The transfer happens through the SalesIQ API call above
-            # Send confirmation message to user
-            response_text = "I'm connecting you with our support team. If the transfer doesn't happen automatically, please call 1-888-415-5240 or email support@acecloudhosting.com for immediate assistance."
-            
-            # Clear conversation after transfer
-            if session_id in conversations:
-                del conversations[session_id]
-            
-            return {
-                "action": "reply",
-                "replies": [response_text],
-                "session_id": session_id
-            }
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "action": "forward",
+                    "department": "2782000000002013",  # Support(QB & App Hosting) department
+                    "replies": ["I'm connecting you with our support team. An operator will assist you shortly."]
+                }
+            )
         
         # Check for option selections - SCHEDULE CALLBACK
         if "callback" in message_lower or "option 2" in message_lower or message_lower == "2" or "schedule" in message_lower or payload == "option_2":
