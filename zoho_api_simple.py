@@ -19,6 +19,11 @@ class ZohoSalesIQAPI:
         self.app_id = os.getenv("SALESIQ_APP_ID", "").strip()
         self.screen_name = os.getenv("SALESIQ_SCREEN_NAME", "rtdsportal").strip()
         
+        # OAuth credentials for token refresh
+        self.client_id = os.getenv("SALESIQ_CLIENT_ID", "1005.2CC62FI55NQZG6QT3FM8HDRIMMV2ZP").strip()
+        self.client_secret = os.getenv("SALESIQ_CLIENT_SECRET", "dc4e57f035c348f3e463c5fb03fa98fb318dee9740").strip()
+        self.refresh_token = os.getenv("SALESIQ_REFRESH_TOKEN", "1005.ca064ba4e1942c852537587184b9a71d.fdfd4da49245cce8fa14bd5af8d2192e").strip()
+        
         # Base URL for Visitor API v1 (official endpoint per API docs)
         self.base_url = f"https://salesiq.zoho.in/api/visitor/v1/{self.screen_name}"
         
@@ -28,6 +33,37 @@ class ZohoSalesIQAPI:
             logger.info(f"SalesIQ Visitor API v1 configured - department: {self.department_id}, app_id: {self.app_id}, screen: {self.screen_name}")
         else:
             logger.warning(f"SalesIQ Visitor API not fully configured - token: {bool(self.access_token)}, dept: {bool(self.department_id)}, app_id: {bool(self.app_id)}, screen: {bool(self.screen_name)}")
+    
+    def refresh_access_token(self) -> bool:
+        """Automatically refresh the access token using refresh token"""
+        import requests
+        
+        if not all([self.client_id, self.client_secret, self.refresh_token]):
+            logger.warning(f"[Token Refresh] Missing credentials - CID: {bool(self.client_id)}, CS: {bool(self.client_secret)}, RT: {bool(self.refresh_token)}")
+            return False
+        
+        try:
+            url = "https://accounts.zoho.in/oauth/v2/token"
+            payload = {
+                "grant_type": "refresh_token",
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+                "refresh_token": self.refresh_token
+            }
+            
+            response = requests.post(url, data=payload, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.access_token = data.get("access_token", "")
+                logger.info(f"[Token Refresh] ✅ SUCCESS! Token refreshed (expires in {data.get('expires_in', 'unknown')} seconds)")
+                return True
+            else:
+                logger.error(f"[Token Refresh] ❌ FAILED - Status {response.status_code}: {response.text[:200]}")
+                return False
+        except Exception as e:
+            logger.error(f"[Token Refresh] ❌ EXCEPTION: {str(e)}")
+            return False
     
     def create_chat_session(
         self,
@@ -106,6 +142,22 @@ class ZohoSalesIQAPI:
             response = requests.post(endpoint, json=payload, headers=headers, timeout=10)
             logger.info(f"SalesIQ: Response Status: {response.status_code}")
             logger.info(f"SalesIQ: Response Body: {response.text[:500]}")
+            
+            # If 400 (Invalid Token), try to refresh and retry once
+            if response.status_code == 400 and "Invalid OAuthToken" in response.text:
+                logger.warning("[Token Refresh] SalesIQ token expired (400). Attempting automatic refresh...")
+                
+                if self.refresh_access_token():
+                    # Update headers with new token
+                    headers["Authorization"] = f"Zoho-oauthtoken {self.access_token}"
+                    
+                    # Retry the request
+                    logger.info("[Retry] Retrying API call with refreshed token...")
+                    response = requests.post(endpoint, json=payload, headers=headers, timeout=10)
+                    logger.info(f"SalesIQ: Retry Response Status: {response.status_code}")
+                else:
+                    logger.error("[Token Refresh] Failed to refresh token - cannot retry")
+                    return {"success": False, "error": "400", "details": "Token expired and refresh failed"}
             
             if response.status_code in [200, 201]:
                 try:
