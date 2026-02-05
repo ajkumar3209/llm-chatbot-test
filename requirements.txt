@@ -8,5 +8,7 @@ tqdm
 fastapi
 uvicorn
 pydantic
+httpx
+requests
 requests
 urllib3
