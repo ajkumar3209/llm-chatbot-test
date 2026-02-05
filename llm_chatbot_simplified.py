@@ -59,6 +59,17 @@ def load_expert_prompt() -> str:
 
 EXPERT_PROMPT = load_expert_prompt()
 
+# Startup banner
+print("\n" + "="*70)
+print("🚀 ACE CLOUD CHATBOT - SIMPLIFIED v2.0 (LLM-FIRST ARCHITECTURE)")
+print("="*70)
+print(f"✅ Expert prompt loaded: {len(EXPERT_PROMPT)} characters")
+print(f"✅ Single LLM call architecture (no classification layer)")
+print(f"✅ Anti-hallucination mode: ENABLED")
+print(f"✅ SalesIQ integration: ENABLED")
+print(f"✅ Desk API integration: ENABLED")
+print("="*70 + "\n")
+
 # Escalation keywords
 ESCALATION_KEYWORDS = [
     # User requests
