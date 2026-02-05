@@ -42,11 +42,8 @@ conversations: Dict[str, List[Dict]] = {}
 # Load expert prompt
 def load_expert_prompt() -> str:
     """Load the expert system prompt"""
-    # Try v2 prompt first (anti-hallucination focused)
-    prompt_path = os.path.join(os.path.dirname(__file__), "expert_prompt_v2.txt")
-    if not os.path.exists(prompt_path):
-        # Fallback to original
-        prompt_path = os.path.join(os.path.dirname(__file__), "config", "prompts", "expert_system_prompt.txt")
+    # Load the main expert prompt with all rules
+    prompt_path = os.path.join(os.path.dirname(__file__), "config", "prompts", "expert_system_prompt.txt")
     
     try:
         with open(prompt_path, 'r', encoding='utf-8') as f:
