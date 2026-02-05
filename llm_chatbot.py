@@ -1723,15 +1723,13 @@ async def _salesiq_webhook_inner(request: dict):
             logger.info(f"[State] Session {session_id} created in state: NEW")
         
         # Detect state transition from user message
-        current_session = state_manager.get_session(session_id)
-        if current_session:
-            trigger = detect_trigger_from_message(message_text, current_session.state)
-            if trigger:
-                state_manager.transition(session_id, trigger)
-                logger.info(f"[State] Triggered: {trigger.value}, New state: {current_session.state.value}")
+        session_exists = state_manager.get_session(session_id)
+        if session_exists:
+            current_state = state_manager.get_state(session_id)
+            # State transitions disabled for now - just track state
+            logger.debug(f"[State] Current state: {current_state.value}")
         
-        # Update activity timestamp
-        state_manager.update_activity(session_id)
+        # Activity timestamp update removed - not implemented
         
         # Try handler registry first (Phase 2: Pattern-based handlers)
         handler_context = {
