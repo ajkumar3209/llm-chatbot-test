@@ -1407,6 +1407,13 @@ async def _salesiq_webhook_inner(request: dict):
                 "escalation": ClassificationResult(intent="BOT_CAN_HANDLE", confidence=1.0, requires_escalation=False, reasoning="New conversation"),
                 "intent": ClassificationResult(intent="QUESTION", confidence=1.0, requires_escalation=False, reasoning="User has new question")
             }
+        elif not llm_classifier:
+            logger.warning(f"[LLM Classifier] Skipping classification - API key not configured")
+            classifications = {
+                "resolution": ClassificationResult(intent="UNCERTAIN", confidence=0.0, requires_escalation=False, reasoning="No API key"),
+                "escalation": ClassificationResult(intent="BOT_CAN_HANDLE", confidence=0.5, requires_escalation=False, reasoning="No API key"),
+                "intent": ClassificationResult(intent="OTHER", confidence=0.0, requires_escalation=False, reasoning="No API key")
+            }
         else:
             logger.info(f"[LLM Classifier] Running unified classification (1 API call)...")
             
@@ -1438,12 +1445,7 @@ async def _salesiq_webhook_inner(request: dict):
         # Strategy: Confirm resolution + let idle timeout close chat (2-3 min)
         # Main value: Prevents unnecessary escalations by detecting true resolution
         
-        # SKIP resolution check if in callback_collection state - let handler process it
-        session = state_manager.get_session(session_id)
-        current_state = session.state if session else None
-        if current_state == ConversationState.CALLBACK_COLLECTION:
-            logger.info(f"[Resolution] Skipping resolution check - in callback_collection state, handler will process")
-        elif llm_classifier.should_close_chat(resolution_classification):
+        if llm_classifier and llm_classifier.should_close_chat(resolution_classification):
             logger.info(f"[Resolution] ✓ ISSUE RESOLVED (LLM-confirmed)")
             logger.info(f"[Resolution] User message: '{message_text[:100]}'")
             logger.info(f"[Resolution] Confidence: {resolution_classification.confidence}% (threshold: {llm_classifier.resolution_threshold}%)")
