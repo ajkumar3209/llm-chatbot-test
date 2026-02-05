@@ -22,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize FastAPI
-app = FastAPI(title="ACE Cloud Chatbot - Simplified")
+app = FastAPI(title="ACE Cloud Chatbot - Simplified v2.0")
 
 # Environment variables
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
