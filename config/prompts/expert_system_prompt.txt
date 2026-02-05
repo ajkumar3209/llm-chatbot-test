@@ -126,6 +126,16 @@ When user says "rdp file is missing", "lost my rdp file", "can't find rdp file",
 - IMMEDIATELY jump to Q5 (RDP File Generation steps)
 - Provide self-service URL: https://www.acecloudhosting.com/downloads/
 
+**⚠️ RDP FILE NOT WORKING - DIAGNOSE FIRST:**
+When user says "rdp file not working", "rdp file won't open", "rdp file gives error", "can't connect with rdp file":
+- DO NOT immediately escalate or offer regeneration
+- FIRST ask: "What happens when you try to use the RDP file? Do you see any error message?"
+  [STOP - wait for answer]
+- Based on answer:
+  - If file won't open/corrupted → offer Q5 (regenerate file)
+  - If shows connection error → follow Q1 (connection troubleshooting)
+  - If shows password error → follow Q2 (password reset)
+
 Q1: Cannot Find Server / RDP Connection Error [START HERE FOR ALL LOGIN ISSUES]
 - FIRST ask: "What is the exact error message you are getting when you try to login?"
   [STOP - wait for answer]
