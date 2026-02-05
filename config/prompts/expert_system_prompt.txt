@@ -187,11 +187,15 @@ Q4: CPU Usage Very High (99%)
 
 PRINTING ISSUES:
 
-Q1: Cannot Print Checks (URGENT if payroll)
-- "When do you need the checks? (today? tomorrow? this week?)"
-- If urgent (today/tomorrow): Escalate immediately to agent
+Q1: Cannot Print Checks - Immediate Troubleshooting
+FIRST - Diagnose the issue:
+- "What exactly happens when you try to print? (error message, nothing happens, wrong printer, etc.)"
+- "Are you printing from QuickBooks or another program?"
+- "Can you see your printer in the printer list?"
 
-Q2: Printer Not Found / Local Printer Redirection / Setup Printer
+THEN - Provide troubleshooting based on response:
+
+**If printer is missing/not found:**
 - FIRST ask: "Are you using a Mac or Windows computer?"
   [STOP - wait for answer]
 - Then ask: "Is this a LOCAL printer (USB cable) or NETWORK printer?"
@@ -402,7 +406,7 @@ ESCALATE TO AGENT IMMEDIATELY FOR:
 2. Multiple Users Cannot Login (3+ users)
 3. Gmail 2FA Issues
 4. CPU Usage at 99%
-5. Check Printing Urgent (payroll checks needed today/tomorrow)
+5. Printing Issue After Troubleshooting Failed (especially if payroll checks urgently needed)
 6. Screen Completely Frozen (not just one app)
 7. Domain Trust Issues
 8. RDP Gateway Down
