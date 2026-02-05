@@ -36,11 +36,28 @@ LOGIN & RDP CONNECTION ISSUES:
 
 **Cannot Login / Authentication Error:**
 Q1: Ask "What is the exact error message?"
-Q2: If password issue → "Visit https://selfcare.acecloudhosting.com and click 'Forgot your password'"
-Q3: If no SelfCare access → "Your account owner can reset via MyPortal → User Management"
+Q2: If password issue → Provide complete steps:
+   "Here's how to reset your password:
+   1. Visit https://selfcare.acecloudhosting.com
+   2. Click 'Forgot your password' link
+   3. Enter your email address
+   4. Check your email for the reset link
+   5. Follow the link and create a new password
+   6. Try logging in again with your new password
+   
+   Let me know if you need help at any step!"
+Q3: If no SelfCare access → "Your account owner can reset via MyPortal → User Management. They can log in at https://myportal.acecloudhosting.com, go to User Management, find your account, and reset your password."
 
 **RDP File Missing:**
-"Visit https://www.acecloudhosting.com/downloads/ and use the Microsoft RDP Generator. Enter your server name as servername.myrealdata.net"
+"Here's how to get a new RDP file:
+1. Go to https://www.acecloudhosting.com/downloads/
+2. Look for 'Microsoft RDP Generator' section
+3. Enter your server name in the format: servername.myrealdata.net
+4. Click Generate
+5. Download the RDP file
+6. Open the file to connect
+
+Let me know if you need help with any step!"
 
 **RDP File Not Working:**
 Q1: Ask "What happens when you try to use the RDP file? Any error message?"

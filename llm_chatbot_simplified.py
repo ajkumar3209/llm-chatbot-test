@@ -318,19 +318,17 @@ async def webhook(request: Request):
             # Create Desk ticket
             ticket_id = await create_desk_ticket(session_id, visitor_name, history)
             
-            # Show escalation buttons
+            # Show escalation buttons in SalesIQ format
             suggestions = [
                 {
-                    "type": "article",
-                    "title": "Chat with Technician",
-                    "description": "Connect with our technical support team",
-                    "link": "https://acecloudhosting.com/support"
+                    "text": "Chat with Technician",
+                    "action_type": "article",
+                    "action_value": "ESCALATE_CHAT"
                 },
                 {
-                    "type": "article", 
-                    "title": "Schedule Callback",
-                    "description": "Request a callback from our team",
-                    "link": "https://acecloudhosting.com/callback"
+                    "text": "Schedule Callback",
+                    "action_type": "article",
+                    "action_value": "SCHEDULE_CALLBACK"
                 }
             ]
             
