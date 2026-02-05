@@ -136,7 +136,7 @@ class GeminiClassifier:
             api_key=api_key,
             base_url="https://openrouter.ai/api/v1"
         )
-        self.model = "google/gemini-2.0-flash-exp:free"
+        self.model = "google/gemini-2.5-flash-lite"
     
     def classify_intent(self, message: str, history: List[Dict]) -> ClassificationResult:
         """Classify user intent using LLM - NO KEYWORDS"""
@@ -260,6 +260,12 @@ Format:
         """Determine if chat should be closed based on resolution classification"""
         return (resolution_classification.intent == "RESOLVED" and 
                 resolution_classification.confidence > 0.8)
+    
+    def should_escalate(self, escalation_classification: ClassificationResult) -> bool:
+        """Determine if conversation should be escalated to human"""
+        return (escalation_classification.intent == "NEEDS_HUMAN" or 
+                escalation_classification.requires_escalation or
+                escalation_classification.confidence > 0.7)
 
 class GeminiGenerator:
     """LLM-powered response generator using Gemini"""
@@ -268,7 +274,7 @@ class GeminiGenerator:
             api_key=api_key,
             base_url="https://openrouter.ai/api/v1"
         )
-        self.model = "google/gemini-2.0-flash-exp:free"
+        self.model = "google/gemini-2.5-flash-lite"
     
     def generate_response(self, message: str, history: List[Dict], system_prompt: str, category: str = "general") -> tuple:
         """Generate response using Gemini - WITH ERROR HANDLING"""
