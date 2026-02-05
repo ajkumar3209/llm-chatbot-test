@@ -1085,6 +1085,25 @@ async def _salesiq_webhook_inner(request: dict):
         # Create lowercase version for simple keyword checks (used by button handlers, etc.)
         message_lower = message_text.lower().strip()
         
+        # ============================================================
+        # SESSION RESET: Detect "new issue" request for testing
+        # ============================================================
+        new_issue_keywords = ["new issue", "start fresh", "clear context", "reset", "new problem", "different issue"]
+        is_new_issue_request = any(keyword in message_lower for keyword in new_issue_keywords)
+        
+        if is_new_issue_request:
+            logger.info(f"[Session] 🔄 NEW ISSUE REQUEST DETECTED - Clearing session context")
+            conversations[session_id] = []  # Clear conversation history
+            response_text = "Sure! Starting fresh. What issue can I help you with today?"
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "action": "reply",
+                    "replies": [response_text],
+                    "session_id": session_id
+                }
+            )
+        
         # Check if conversation was handed off to operator - if so, bot should stop responding
         if history and any(msg.get("role") == "system" and msg.get("content") == "HANDOFF_TO_OPERATOR" for msg in history):
             logger.info(f"[Handoff] ✋ Session {session_id} handed off to operator - bot ignoring message")
