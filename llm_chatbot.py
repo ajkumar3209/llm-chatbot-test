@@ -70,6 +70,11 @@ class MetricsCollector:
             duration = time.time() - self.conversations[session_id]["start_time"]
             logger.info(f"[Metrics] Session {session_id} ended: {outcome}, duration: {duration:.1f}s")
             del self.conversations[session_id]
+    
+    def record_error(self, session_id: str):
+        """Record error for metrics tracking"""
+        if session_id in self.conversations:
+            self.conversations[session_id]["errors"] = self.conversations[session_id].get("errors", 0) + 1
 
 class StateManager:
     """Manages conversation states"""
@@ -179,6 +184,67 @@ Respond in JSON format:
                 reasoning=f"Classification error: {str(e)}"
             )
     
+    def classify_unified(self, message: str, history: List[Dict], session_id: str = None) -> Dict[str, ClassificationResult]:
+        """Unified classification for resolution, escalation, and intent"""
+        try:
+            prompt = f"""Analyze this customer support conversation and provide THREE classifications:
+
+User message: "{message}"
+
+Recent conversation:
+{self._format_history(history)}
+
+Provide JSON response with these three classifications:
+1. "resolution": Is the customer's issue resolved? (RESOLVED, UNCERTAIN, NOT_RESOLVED)
+2. "escalation": Should this be escalated? (NEEDS_HUMAN, BOT_CAN_HANDLE, UNCERTAIN)
+3. "intent": What is the user trying to do? (QUESTION, FEEDBACK, REQUEST, COMPLAINT, GREETING, OTHER)
+
+Format:
+{{
+  "resolution": {{"intent": "RESOLVED", "confidence": 0.95, "reasoning": "User confirmed satisfaction"}},
+  "escalation": {{"intent": "BOT_CAN_HANDLE", "confidence": 0.90, "reasoning": "Simple query"}},
+  "intent": {{"intent": "QUESTION", "confidence": 0.95, "reasoning": "Asking about pricing"}}
+}}"""
+
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                max_tokens=300
+            )
+            
+            result_text = response.choices[0].message.content.strip()
+            import json
+            result = json.loads(result_text)
+            
+            return {
+                "resolution": ClassificationResult(
+                    intent=result["resolution"]["intent"],
+                    confidence=result["resolution"]["confidence"],
+                    requires_escalation=False,
+                    reasoning=result["resolution"]["reasoning"]
+                ),
+                "escalation": ClassificationResult(
+                    intent=result["escalation"]["intent"],
+                    confidence=result["escalation"]["confidence"],
+                    requires_escalation=(result["escalation"]["intent"] == "NEEDS_HUMAN"),
+                    reasoning=result["escalation"]["reasoning"]
+                ),
+                "intent": ClassificationResult(
+                    intent=result["intent"]["intent"],
+                    confidence=result["intent"]["confidence"],
+                    requires_escalation=False,
+                    reasoning=result["intent"]["reasoning"]
+                )
+            }
+        except Exception as e:
+            logger.error(f"[GeminiClassifier] Unified classification failed: {e}")
+            return {
+                "resolution": ClassificationResult("UNCERTAIN", 0.0, False, f"Error: {e}"),
+                "escalation": ClassificationResult("BOT_CAN_HANDLE", 0.5, False, "Fallback"),
+                "intent": ClassificationResult("OTHER", 0.0, False, "Fallback")
+            }
+    
     def _format_history(self, history: List[Dict]) -> str:
         """Format conversation history for LLM"""
         if not history:
@@ -189,6 +255,11 @@ Respond in JSON format:
             role = "Customer" if msg.get('role') == 'user' else "Assistant"
             formatted.append(f"{role}: {msg.get('content', '')}")
         return "\n".join(formatted)
+    
+    def should_close_chat(self, resolution_classification: ClassificationResult) -> bool:
+        """Determine if chat should be closed based on resolution classification"""
+        return (resolution_classification.intent == "RESOLVED" and 
+                resolution_classification.confidence > 0.8)
 
 class GeminiGenerator:
     """LLM-powered response generator using Gemini"""
@@ -1332,9 +1403,9 @@ async def _salesiq_webhook_inner(request: dict):
             logger.info(f"[LLM Classifier] Skipping classification - conversation restarted with new question")
             # Force uncertain classification to let main LLM handle the new question
             classifications = {
-                "resolution": ClassificationResult("UNCERTAIN", 0, "New question after resolution", ""),
-                "escalation": ClassificationResult("BOT_CAN_HANDLE", 100, "New conversation", ""),
-                "intent": ClassificationResult("QUESTION", 100, "User has new question", "")
+                "resolution": ClassificationResult(intent="UNCERTAIN", confidence=0.0, requires_escalation=False, reasoning="New question after resolution"),
+                "escalation": ClassificationResult(intent="BOT_CAN_HANDLE", confidence=1.0, requires_escalation=False, reasoning="New conversation"),
+                "intent": ClassificationResult(intent="QUESTION", confidence=1.0, requires_escalation=False, reasoning="User has new question")
             }
         else:
             logger.info(f"[LLM Classifier] Running unified classification (1 API call)...")
@@ -1349,16 +1420,16 @@ async def _salesiq_webhook_inner(request: dict):
                 logger.error(f"[LLM Classifier] Classification failed: {e}")
                 # Fallback: Continue without classification (let main LLM handle it)
                 classifications = {
-                    "resolution": ClassificationResult("UNCERTAIN", 0, "Classification error", ""),
-                    "escalation": ClassificationResult("UNCERTAIN", 0, "Classification error", ""),
-                    "intent": ClassificationResult("OTHER", 0, "Classification error", "")
+                    "resolution": ClassificationResult(intent="UNCERTAIN", confidence=0.0, requires_escalation=False, reasoning="Classification error"),
+                    "escalation": ClassificationResult(intent="UNCERTAIN", confidence=0.0, requires_escalation=False, reasoning="Classification error"),
+                    "intent": ClassificationResult(intent="OTHER", confidence=0.0, requires_escalation=False, reasoning="Classification error")
                 }
         
         resolution_classification = classifications["resolution"]
         escalation_classification = classifications["escalation"]
         
-        logger.info(f"[LLM Classifier] Resolution: {resolution_classification.decision} ({resolution_classification.confidence}%) - {resolution_classification.reasoning}")
-        logger.info(f"[LLM Classifier] Escalation: {escalation_classification.decision} ({escalation_classification.confidence}%) - {escalation_classification.reasoning}")
+        logger.info(f"[LLM Classifier] Resolution: {resolution_classification.intent} ({resolution_classification.confidence:.2f}) - {resolution_classification.reasoning}")
+        logger.info(f"[LLM Classifier] Escalation: {escalation_classification.intent} ({escalation_classification.confidence:.2f}) - {escalation_classification.reasoning}")
         
         # ============================================================
         # RESOLUTION CHECK (Smart Satisfaction Confirmation)
