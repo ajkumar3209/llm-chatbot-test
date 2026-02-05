@@ -228,6 +228,16 @@ def generate_llm_response(message: str, history: List[Dict]) -> str:
         return "I apologize, but I'm having trouble processing your request. Let me connect you with our support team."
 
 
+@app.get("/webhook")
+async def webhook_health():
+    """Health check for webhook endpoint"""
+    return {
+        "status": "ready",
+        "endpoint": "/webhook (POST for messages)",
+        "alt_endpoint": "/webhook/salesiq (POST for SalesIQ)"
+    }
+
+
 @app.post("/webhook")
 async def webhook(request: Request):
     """
@@ -338,6 +348,14 @@ async def health():
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "expert_prompt_loaded": len(EXPERT_PROMPT) > 0,
+        "active_sessions": len(conversations)
+    }
+
+
+@app.post("/webhook/salesiq")
+async def webhook_salesiq(request: Request):
+    """Alias for SalesIQ webhook - same as /webhook"""
+    return await webhook(request)
         "active_sessions": len(conversations)
     }
 
