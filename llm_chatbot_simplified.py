@@ -303,11 +303,21 @@ async def webhook(request: Request):
         # Add bot response to history
         history.append({"role": "assistant", "content": bot_response})
         
-        # Check if escalation needed (disabled automatic detection)
-        # Only escalate if user explicitly asks
-        needs_escalation = any(phrase in message.lower() for phrase in [
+        # Check if escalation needed
+        # ESCALATION TRIGGER 1: User explicitly asks
+        user_asks_escalation = any(phrase in message.lower() for phrase in [
             "talk to someone", "speak to agent", "connect me", "human agent", "real person"
         ])
+        
+        # ESCALATION TRIGGER 2: LLM generated escalation message (detected by keywords)
+        llm_generated_escalation = any(phrase in bot_response.lower() for phrase in [
+            "let me connect you", "connect you with our", "connect you with the", 
+            "let me get our team", "immediate attention", "technical team",
+            "connect you with our technical team", "i understand this is",
+            "thank you for your patience"
+        ])
+        
+        needs_escalation = user_asks_escalation or llm_generated_escalation
         
         if needs_escalation:
             logger.info(f"🚨 Escalation triggered for session {session_id}")
@@ -329,17 +339,14 @@ async def webhook(request: Request):
                 }
             ]
             
-            escalation_message = bot_response if any(phrase in bot_response.lower() for phrase in BOT_ESCALATION_PHRASES) else \
-                f"{bot_response}\n\nI understand this needs attention. Let me connect you with the right support:"
-            
             # Send to SalesIQ with buttons (disabled - tokens missing)
-            # await send_salesiq_message(session_id, escalation_message, suggestions)
+            # await send_salesiq_message(session_id, bot_response, suggestions)
             
             return JSONResponse(
                 status_code=200,
                 content={
                     "action": "reply",
-                    "replies": [escalation_message],
+                    "replies": [bot_response],
                     "suggestions": suggestions,
                     "session_id": session_id
                 }
