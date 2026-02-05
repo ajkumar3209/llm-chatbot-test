@@ -352,6 +352,22 @@ async def health():
     }
 
 
+@app.get("/webhook/salesiq")
+async def webhook_salesiq_health():
+    """Health check for SalesIQ webhook endpoint"""
+    return {
+        "status": "ready",
+        "message": "SalesIQ webhook is active and ready to receive POST requests",
+        "usage": "POST to this endpoint with SalesIQ chat events",
+        "supported_endpoints": {
+            "/webhook": "Main webhook (POST only)",
+            "/webhook/salesiq": "SalesIQ alias (POST only)",
+            "/health": "Health check",
+            "/": "Info"
+        }
+    }
+
+
 @app.post("/webhook/salesiq")
 async def webhook_salesiq(request: Request):
     """Alias for SalesIQ webhook - same as /webhook"""
