@@ -1123,60 +1123,13 @@ async def _salesiq_webhook_inner(request: dict):
         intent_classification = classify_intent(message_text, history)
         logger.info(f"[LLM] Intent: {intent_classification.intent} (confidence: {intent_classification.confidence}, escalation: {intent_classification.requires_escalation})")
         
-        # Handle escalation request (detected by LLM)
-        if intent_classification.requires_escalation or intent_classification.intent == "escalation_request":
+        # DISABLED: Immediate escalation check - let generate_response handle escalation
+        # The bot now asks troubleshooting questions FIRST via generate_response()
+        # Only escalate AFTER the user can't resolve it (expert prompt handles this)
+        if False and (intent_classification.requires_escalation or intent_classification.intent == "escalation_request"):
             logger.info(f"[SalesIQ] LLM detected escalation request - initiating transfer")
-            
-            # Build conversation history for transfer
-            past_messages = build_past_messages(history)
-            conversation_text = ""
-            for msg in history:
-                role = "User" if msg.get('role') == 'user' else "Bot"
-                conversation_text += f"{role}: {msg.get('content', '')}\n"
-            
-            # Call SalesIQ API to transfer - WITH RETRY AND SUCCESS CHECK
-            try:
-                api_result = call_api_with_retry(
-                    salesiq_api.create_chat_session,
-                    session_id,
-                    conversation_text,
-                    max_retries=3
-                )
-                logger.info(f"[SalesIQ] Transfer API result: {api_result}")
-                
-                # CHECK SUCCESS FLAG before telling user
-                if api_result.get('success'):
-                    response_text = "I'm connecting you with our support team. They'll be with you shortly!"
-                    logger.info(f"[SalesIQ] ✓ Transfer successful")
-                else:
-                    response_text = (
-                        "I'm having trouble connecting you right now. Please contact us directly:\n\n"
-                        "📞 Phone: 1-888-415-5240 (24/7)\n"
-                        "✉️ Email: support@acecloudhosting.com"
-                    )
-                    logger.warning(f"[SalesIQ] ✗ Transfer failed after retries: {api_result.get('error', 'Unknown error')}")
-                
-            except Exception as e:
-                logger.error(f"[SalesIQ] Transfer exception: {e}")
-                response_text = (
-                    "I'm having trouble connecting you right now. Please contact us directly:\n\n"
-                    "📞 Phone: 1-888-415-5240 (24/7)\n"
-                    "✉️ Email: support@acecloudhosting.com"
-                )
-            
-            # Clear conversation after transfer
-            if session_id in conversations:
-                metrics_collector.end_conversation(session_id, "escalated")
-                del conversations[session_id]
-            
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "action": "reply",
-                    "replies": [response_text],
-                    "session_id": session_id
-                }
-            )
+            # Escalation handling disabled - fallthrough to generate_response
+            pass
         
         # ============================================================
         # CHECK IF USER IS CONTINUING AFTER SATISFACTION MESSAGE
