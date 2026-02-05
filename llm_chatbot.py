@@ -207,6 +207,11 @@ User message: "{message}"
 Recent conversation:
 {self._format_history(history)}
 
+CRITICAL ESCALATION RULES:
+- "not working" / "issue" / "problem" = BOT_CAN_HANDLE (bot will ask diagnostic questions first)
+- Only use NEEDS_HUMAN for: black screen, frozen screen, multiple users down, user explicitly requests human agent
+- When in doubt, use BOT_CAN_HANDLE - let the bot try to help first
+
 Provide JSON response with these three classifications:
 1. "resolution": Is the customer's issue resolved? (RESOLVED, UNCERTAIN, NOT_RESOLVED)
 2. "escalation": Should this be escalated? (NEEDS_HUMAN, BOT_CAN_HANDLE, UNCERTAIN)
