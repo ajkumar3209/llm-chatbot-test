@@ -164,8 +164,13 @@ Respond in JSON format:
             )
             
             result_text = response.choices[0].message.content.strip()
-            # Parse JSON response
+            # Parse JSON response - handle markdown code blocks
             import json
+            import re
+            # Extract JSON from markdown code blocks if present
+            json_match = re.search(r'```(?:json)?\s*({.*?})\s*```', result_text, re.DOTALL)
+            if json_match:
+                result_text = json_match.group(1)
             result = json.loads(result_text)
             
             return ClassificationResult(
@@ -215,6 +220,11 @@ Format:
             
             result_text = response.choices[0].message.content.strip()
             import json
+            import re
+            # Extract JSON from markdown code blocks if present
+            json_match = re.search(r'```(?:json)?\\s*({.*?})\\s*```', result_text, re.DOTALL)
+            if json_match:
+                result_text = json_match.group(1)
             result = json.loads(result_text)
             
             return {
@@ -1692,7 +1702,7 @@ async def _salesiq_webhook_inner(request: dict):
             router_matched = category != "other"
             logger.info(f"[Metrics] 📊 NEW CONVERSATION STARTED")
             logger.info(f"[Metrics] Category: {category}, Router Matched: {router_matched}")
-            metrics_collector.start_conversation(session_id, category, router_matched)
+            metrics_collector.start_conversation(session_id, category)
             
             # Create state management session
             state_session = state_manager.create_session(session_id, category)
