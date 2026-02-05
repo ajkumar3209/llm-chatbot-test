@@ -1738,79 +1738,24 @@ async def _salesiq_webhook_inner(request: dict):
         
         # GENERATE LLM RESPONSE (no handlers, just direct LLM)
         if not response_text:
-                # Return transfer response
-                return JSONResponse(
-                    status_code=200,
-                    content={
-                        "action": "reply",
-                        "replies": [response_text],
-                        "session_id": session_id
-                    }
+            logger.info(f"[LLM] 🤖 Generating response using Gemini...")
+            try:
+                response_text, tokens_used = generate_response(
+                    message_text,
+                    conversations[session_id],
+                    category
                 )
-            
-            # Check for callback scheduling
-            if metadata.get("action") == "schedule_callback":
-                # Extract visitor info
-                visitor_name = visitor.get("name", metadata.get("visitor_name", "User"))
-                visitor_email = visitor.get("email", metadata.get("visitor_email", "support@acecloudhosting.com"))
-                phone = metadata.get("phone", "Not provided")
-                preferred_time = metadata.get("preferred_time", "ASAP")
-                
-                # Build conversation history text
-                conversation_text = "\n".join([f"{msg.get('role')}: {msg.get('content')}" for msg in history])
-                
-                logger.info(f"[Callback] LLM requested callback: phone={phone}, time={preferred_time}")
-                logger.info(f"[Callback] Transitioning to callback collection state")
-                
-                # Transition to callback collection state
-                state_manager.transition(session_id, TransitionTrigger.CALLBACK_REQUESTED)
-                
-                # Mark session as waiting for callback details
-                conversations[session_id].append({"role": "user", "content": message_text})
-                conversations[session_id].append({"role": "assistant", "content": response_text})
-                conversations[session_id].append({"role": "system", "content": "WAITING_FOR_CALLBACK_DETAILS"})
-                
-                # Return response asking for details
-                return JSONResponse(
-                    status_code=200,
-                    content={
-                        "action": "reply",
-                        "replies": [response_text],
-                        "session_id": session_id
-                    }
-                )
-            
-            # Check for ticket creation
-            if metadata.get("action") == "create_ticket":
-                api_result = desk_api.create_support_ticket(
-                    user_name="pending",
-                    user_email="pending",
-                    phone="pending",
-                    description="Support ticket from chat",
-                    issue_type="general",
-                    conversation_history="\n".join([f"{msg.get('role')}: {msg.get('content')}" for msg in history])
-                )
-                logger.info(f"[Handler] Ticket API result: {api_result}")
-                
-                logger.info(f"[Metrics] 📊 CONVERSATION ENDED - Reason: Support Ticket Created")
-                close_result = salesiq_api.close_chat(session_id, "ticket_created")
-                logger.info(f"[Handler] Chat closure result: {close_result}")
-                
-                if session_id in conversations:
-                    metrics_collector.end_conversation(session_id, "escalated")
-                    state_manager.end_session(session_id, ConversationState.ESCALATED)
-                    del conversations[session_id]
-                
-                # Return ticket creation response
-                return JSONResponse(
-                    status_code=200,
-                    content={
-                        "action": "reply",
-                        "replies": [response_text],
-                        "session_id": session_id
-                    }
-                )
-            
+                logger.info(f"[LLM] ✓ Generated response ({tokens_used} tokens)")
+            except Exception as e:
+                logger.error(f"[LLM] Generation failed: {e}")
+                response_text = "I apologize, but I'm having trouble processing your request right now. Please try again or contact our support team at 1-888-415-5240."
+                tokens_used = 0
+        
+        # ============================================================
+        # Phase 3: LLM response generated successfully
+        # ============================================================
+        
+        # Log the final response
             # Standard response (no special action)
             conversations[session_id].append({"role": "user", "content": message_text})
             conversations[session_id].append({"role": "assistant", "content": response_text})
