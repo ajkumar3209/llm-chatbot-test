@@ -1489,44 +1489,15 @@ async def _salesiq_webhook_inner(request: dict):
             )
         
         # ============================================================
-        # ESCALATION CHECK (already analyzed in unified call above)
+        # ESCALATION CHECK - DISABLED
         # ============================================================
-        # Offer escalation if LLM detects user needs human help
-        if llm_classifier.should_escalate(escalation_classification):
+        # DISABLED: Let generate_response() handle escalation via expert prompt
+        # Only escalate AFTER bot provides troubleshooting (if user still needs help)
+        if False and llm_classifier.should_escalate(escalation_classification):
             logger.info(f"[Escalation] 🆙 USER NEEDS HUMAN ASSISTANCE (LLM-detected)")
-            logger.info(f"[Escalation] User message: '{message_text[:100]}'")
-            logger.info(f"[Escalation] Confidence: {escalation_classification.confidence}% (threshold: {llm_classifier.escalation_threshold}%)")
-            logger.info(f"[Escalation] Options: ① Chat with Technician | ② Schedule Callback")
-            
-            # Update state to escalated (don't call transition - method doesn't exist)
-            state_manager.end_session(session_id, ConversationState.ESCALATED)
-            
-            response_text = "I understand this needs immediate attention. Let me connect you with the right support:"
-            
-            # Add to history so next response can find it
-            conversations[session_id].append({"role": "user", "content": message_text})
-            conversations[session_id].append({"role": "assistant", "content": response_text})
-            
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "action": "reply",
-                    "replies": [response_text],
-                    "suggestions": [
-                        {
-                            "text": "Chat with Technician",
-                            "action_type": "reply",
-                            "action_value": "1"
-                        },
-                        {
-                            "text": "Schedule Callback",
-                            "action_type": "reply",
-                            "action_value": "2"
-                        }
-                    ],
-                    "session_id": session_id
-                }
-            )
+            pass  # This escalation path is disabled
+        
+        # Fallthrough to generate_response() for bot to ask troubleshooting questions
         
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         # REMOVED KEYWORD-BASED LOGIC: LLM now handles all intent detection
