@@ -283,9 +283,13 @@ Format:
     
     def should_escalate(self, escalation_classification: ClassificationResult) -> bool:
         """Determine if conversation should be escalated to human"""
-        return (escalation_classification.intent == "NEEDS_HUMAN" or 
-                escalation_classification.requires_escalation or
-                escalation_classification.confidence > 0.7)
+        # Only escalate if LLM says NEEDS_HUMAN with high confidence
+        if escalation_classification.intent == "NEEDS_HUMAN" and escalation_classification.confidence > 0.7:
+            return True
+        # Or if requires_escalation flag is explicitly set
+        if escalation_classification.requires_escalation:
+            return True
+        return False
 
 class GeminiGenerator:
     """LLM-powered response generator using Gemini"""
