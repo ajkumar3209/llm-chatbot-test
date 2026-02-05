@@ -356,8 +356,6 @@ async def health():
 async def webhook_salesiq(request: Request):
     """Alias for SalesIQ webhook - same as /webhook"""
     return await webhook(request)
-        "active_sessions": len(conversations)
-    }
 
 
 @app.get("/")
