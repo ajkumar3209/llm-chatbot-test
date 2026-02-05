@@ -137,6 +137,8 @@ class GeminiClassifier:
             base_url="https://openrouter.ai/api/v1"
         )
         self.model = "google/gemini-2.5-flash-lite"
+        self.escalation_threshold = 0.7
+        self.resolution_threshold = 0.8
     
     def classify_intent(self, message: str, history: List[Dict]) -> ClassificationResult:
         """Classify user intent using LLM - NO KEYWORDS"""
