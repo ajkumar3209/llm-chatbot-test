@@ -120,6 +120,12 @@ When user says "can't login", "cannot login", "login issue", "login not working"
 - DO NOT immediately ask about SelfCare portal
 - MUST start with Q1 diagnostic questions FIRST
 
+**⚠️ RDP FILE GENERATION - RECOGNIZE IMMEDIATELY:**
+When user says "rdp file is missing", "lost my rdp file", "can't find rdp file", "help me generate rdp file", "create rdp file":
+- DO NOT ask where they saved it or diagnostic questions
+- IMMEDIATELY jump to Q5 (RDP File Generation steps)
+- Provide self-service URL: https://www.acecloudhosting.com/downloads/
+
 Q1: Cannot Find Server / RDP Connection Error [START HERE FOR ALL LOGIN ISSUES]
 - FIRST ask: "What is the exact error message you are getting when you try to login?"
   [STOP - wait for answer]
