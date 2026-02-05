@@ -1749,63 +1749,7 @@ async def _salesiq_webhook_inner(request: dict):
                 }
             )
         
-        # Log the final response
-            # Standard response (no special action)
-            conversations[session_id].append({"role": "user", "content": message_text})
-            conversations[session_id].append({"role": "assistant", "content": response_text})
-            
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "action": "reply",
-                    "replies": [response_text],
-                    "session_id": session_id
-                }
-            )
-        
-        # No handler matched, continue with existing hardcoded logic or LLM
-        logger.info(f"[Handler] No handler matched, continuing with existing logic")
-        
-        # Generate LLM response with embedded resolution steps
-        logger.info(f"[LLM] 🤖 CALLING Gemini 2.5 Flash for category: {category}")
-        response_text, tokens_used = generate_response(message_text, history, category=category)
-        logger.info(f"[LLM] ✓ Response generated | Tokens used: {tokens_used} | Category: {category}")
-        
-        # Record metrics
-        logger.info(f"[Metrics] 📊 Recording message: LLM=True, Tokens={tokens_used}, Category={category}")
-        metrics_collector.record_message(session_id, is_llm_call=True, tokens_used=tokens_used)
-        
-        # Clean response
-        response_text = response_text.replace('**', '')
-        import re
-        response_text = re.sub(r'^\s*\*\s+', '- ', response_text, flags=re.MULTILINE)
-        response_text = re.sub(r'\n\s*\n+', '\n', response_text)
-        response_text = response_text.strip()
-        
-        # ============================================================
-        # FALLBACK: Handle unrecognized/unclear inputs
-        # ============================================================
-        # If LLM response is very short or generic, might indicate confusion
-        # Add helpful escalation option for user
-        
-        unclear_indicators = [
-            "i don't understand",
-            "i'm not sure",
-            "could you clarify",
-            "can you rephrase",
-            "i didn't quite get that"
-        ]
-        
-        response_seems_unclear = any(indicator in response_text.lower() for indicator in unclear_indicators)
-        
-        # Only add escalation if response explicitly says it doesn't understand (not just because it's short)
-        if response_seems_unclear:
-            logger.info(f"[Fallback] Response indicates unclear understanding - adding escalation option")
-            response_text += "\n\nIf I'm not understanding correctly, would you like to speak with our support team? I can connect you to an agent or schedule a callback." 
-        
-        logger.info(f"[SalesIQ] Response generated: {response_text[:100]}...")
-        
-        # Update conversation history
+        # Standard response (no escalation detected)
         conversations[session_id].append({"role": "user", "content": message_text})
         conversations[session_id].append({"role": "assistant", "content": response_text})
         
@@ -1817,7 +1761,7 @@ async def _salesiq_webhook_inner(request: dict):
                 "session_id": session_id
             }
         )
-        
+    
     except Exception as e:
         import traceback as tb_module
         error_msg = str(e)
