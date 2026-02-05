@@ -1273,8 +1273,8 @@ async def _salesiq_webhook_inner(request: dict):
             logger.info(f"[Action] ✅ BUTTON CLICKED: Schedule Callback (Option 2)")
             logger.info(f"[Action] 📞 CALLBACK SCHEDULED - Waiting for time & phone details")
             
-            # Transition to callback collection state
-            state_manager.transition(session_id, TransitionTrigger.CALLBACK_REQUESTED)
+            # Log callback request (don't call transition - method doesn't exist)
+            logger.debug(f"[State] Callback requested for session {session_id}")
             
             # Extract visitor info
             visitor_email = visitor.get("email", "support@acecloudhosting.com")
@@ -1498,8 +1498,8 @@ async def _salesiq_webhook_inner(request: dict):
             logger.info(f"[Escalation] Confidence: {escalation_classification.confidence}% (threshold: {llm_classifier.escalation_threshold}%)")
             logger.info(f"[Escalation] Options: ① Chat with Technician | ② Schedule Callback")
             
-            # Transition to escalation options state
-            state_manager.transition(session_id, TransitionTrigger.SOLUTION_FAILED)
+            # Update state to escalated (don't call transition - method doesn't exist)
+            state_manager.end_session(session_id, ConversationState.ESCALATED)
             
             response_text = "I understand this needs immediate attention. Let me connect you with the right support:"
             
