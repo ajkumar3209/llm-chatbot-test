@@ -1698,6 +1698,57 @@ async def _salesiq_webhook_inner(request: dict):
         # Phase 3: LLM response generated successfully
         # ============================================================
         
+        # Check if user explicitly requested escalation
+        escalation_request_keywords = [
+            "connect me to someone", "talk to agent", "speak to agent", "chat with agent",
+            "human agent", "real person", "live person", "support team", "technician",
+            "can you connect me", "connect me to", "transfer me", "escalate",
+            "i need help", "i need someone", "not working", "not fixed", "still not working"
+        ]
+        
+        user_requested_escalation = any(keyword in message_lower for keyword in escalation_request_keywords)
+        
+        # Check if bot response indicates escalation
+        bot_escalation_phrases = [
+            "i'll connect you", "i understand you'd like to connect",
+            "let me connect you", "connecting you with", "connect you with our support team"
+        ]
+        
+        bot_is_escalating = any(phrase in response_text.lower() for phrase in bot_escalation_phrases)
+        
+        # If escalation is happening, show buttons
+        if user_requested_escalation or bot_is_escalating:
+            logger.info(f"[Escalation] 🆙 ESCALATION DETECTED - Showing escalation buttons")
+            logger.info(f"[Escalation] User requested: {user_requested_escalation}, Bot escalating: {bot_is_escalating}")
+            
+            # Update response to be clearer about options
+            if "connect you" not in response_text.lower():
+                response_text = "I understand this needs attention. Let me connect you with the right support:"
+            
+            conversations[session_id].append({"role": "user", "content": message_text})
+            conversations[session_id].append({"role": "assistant", "content": response_text})
+            
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "action": "reply",
+                    "replies": [response_text],
+                    "suggestions": [
+                        {
+                            "text": "Chat with Technician",
+                            "action_type": "reply",
+                            "action_value": "1"
+                        },
+                        {
+                            "text": "Schedule Callback",
+                            "action_type": "reply",
+                            "action_value": "2"
+                        }
+                    ],
+                    "session_id": session_id
+                }
+            )
+        
         # Log the final response
             # Standard response (no special action)
             conversations[session_id].append({"role": "user", "content": message_text})
