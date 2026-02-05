@@ -1,1 +1,1 @@
-web: python llm_chatbot_simplified.py
+web: python -u llm_chatbot_simplified.py
