@@ -253,12 +253,26 @@ async def webhook(request: Request):
         logger.info(f"📨 Webhook received: {json.dumps(data, indent=2)}")
         
         # Extract data
-        message = data.get("message", {}).get("text", "")
-        session_id = data.get("session_id", "unknown")
-        visitor_name = data.get("visitor", {}).get("name", "User")
+        handler = data.get("handler", "")
+        message = data.get("message", {}).get("text", "") if isinstance(data.get("message"), dict) else ""
+        visitor = data.get("visitor", {})
+        session_id = visitor.get("active_conversation_id", data.get("session_id", "unknown"))
+        visitor_name = visitor.get("name", visitor.get("email", "User"))
+        
+        # Handle initial contact (trigger event)
+        if handler == "trigger" and not message:
+            logger.info(f"👋 Initial contact - session {session_id}")
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "action": "reply",
+                    "replies": ["Hi! I'm AceBuddy, your Ace Cloud Hosting support assistant. What can I help you with today?"],
+                    "session_id": session_id
+                }
+            )
         
         if not message:
-            logger.warning("Empty message received")
+            logger.warning("Empty message received (non-trigger)")
             return JSONResponse(
                 status_code=200,
                 content={"action": "reply", "replies": [], "session_id": session_id}
