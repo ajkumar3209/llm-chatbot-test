@@ -1731,9 +1731,12 @@ async def _salesiq_webhook_inner(request: dict):
         
         # Activity timestamp update removed - not implemented
         
+        # Get current state for handler context
+        current_state = state_manager.get_state(session_id)
+        
         # Try handler registry first (Phase 2: Pattern-based handlers)
         handler_context = {
-            "state": current_session.state.value if current_session else ConversationState.GREETING.value,
+            "state": current_state.value,
             "session_id": session_id,
             "history": history,
             "category": category,
