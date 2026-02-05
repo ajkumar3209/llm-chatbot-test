@@ -259,15 +259,23 @@ async def webhook(request: Request):
         
         if not message:
             logger.warning("Empty message received")
-            return JSONResponse({"status": "ignored"})
+            return JSONResponse(
+                status_code=200,
+                content={"action": "reply", "replies": [], "session_id": session_id}
+            )
         
         # Session reset keyword
         if message.lower() in ["new issue", "start fresh", "reset", "clear context"]:
             conversations[session_id] = []
             logger.info(f"🔄 Session reset for {session_id}")
-            return JSONResponse({
-                "reply": "Sure! Starting fresh. What issue can I help you with today?"
-            })
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "action": "reply",
+                    "replies": ["Sure! Starting fresh. What issue can I help you with today?"],
+                    "session_id": session_id
+                }
+            )
         
         # Get/create conversation history
         if session_id not in conversations:
@@ -319,25 +327,38 @@ async def webhook(request: Request):
             # Send to SalesIQ with buttons
             await send_salesiq_message(session_id, escalation_message, suggestions)
             
-            return JSONResponse({
-                "reply": escalation_message,
-                "suggestions": suggestions,
-                "ticket_id": ticket_id
-            })
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "action": "reply",
+                    "replies": [escalation_message],
+                    "suggestions": suggestions,
+                    "session_id": session_id
+                }
+            )
         
         else:
             # Normal response - no escalation
             await send_salesiq_message(session_id, bot_response)
             
-            return JSONResponse({
-                "reply": bot_response
-            })
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "action": "reply",
+                    "replies": [bot_response],
+                    "session_id": session_id
+                }
+            )
         
     except Exception as e:
         logger.error(f"❌ Webhook error: {e}", exc_info=True)
         return JSONResponse(
-            {"error": "Internal server error"},
-            status_code=500
+            status_code=200,
+            content={
+                "action": "reply",
+                "replies": ["I'm experiencing technical difficulties. Let me connect you with our support team."],
+                "session_id": session_id if 'session_id' in locals() else "unknown"
+            }
         )
 
 
