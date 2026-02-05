@@ -1729,96 +1729,15 @@ async def _salesiq_webhook_inner(request: dict):
             # State transitions disabled for now - just track state
             logger.debug(f"[State] Current state: {current_state.value}")
         
-        # Activity timestamp update removed - not implemented
-        
-        # Get current state for handler context
+        # Get current state
         current_state = state_manager.get_state(session_id)
         
-        # Try handler registry first (Phase 2: Pattern-based handlers)
-        handler_context = {
-            "state": current_state.value,
-            "session_id": session_id,
-            "history": history,
-            "category": category,
-            "visitor": visitor,
-            "payload": payload
-        }
+        # SKIP handler registry - go straight to LLM generation
+        response_text = None
+        tokens_used = 0
         
-        handler_response = handler_registry.handle_message(message_text, handler_context)
-        
-        # If handler matched and returned response, use it
-        if handler_response and handler_response.text:
-            logger.info(f"[Handler] ✅ HANDLER MATCHED - Processing response")
-            logger.info(f"[Handler] Response text: {handler_response.text[:150]}...")
-            response_text = handler_response.text
-            
-            # Update state if handler requested it
-            if handler_response.should_update_state and handler_response.new_state:
-                if current_session:
-                    # Map string state back to enum if needed
-                    try:
-                        new_state = ConversationState(handler_response.new_state)
-                        current_session.state = new_state
-                        logger.info(f"[Handler] Updated state to: {new_state.value}")
-                    except ValueError:
-                        logger.warning(f"[Handler] Invalid state: {handler_response.new_state}")
-            
-            # Handle metadata actions (transfer, close, suggestions)
-            metadata = handler_response.metadata or {}
-            
-            # Check if we need to close chat
-            if metadata.get("action") == "close_chat":
-                close_result = salesiq_api.close_chat(session_id, metadata.get("reason", "resolved"))
-                logger.info(f"[Handler] Chat closure result: {close_result}")
-                
-                if session_id in conversations:
-                    reason = metadata.get("reason", "resolved")
-                    logger.info(f"[Metrics] 📊 CONVERSATION ENDED - Reason: {reason.upper()}")
-                    metrics_collector.end_conversation(session_id, "resolved")
-                    state_manager.end_session(session_id, ConversationState.RESOLVED)
-                    del conversations[session_id]
-            
-            # Check if we need to show suggestions/buttons
-            if metadata.get("action") == "show_suggestions":
-                conversations[session_id].append({"role": "user", "content": message_text})
-                conversations[session_id].append({"role": "assistant", "content": response_text})
-                
-                return JSONResponse(
-                    status_code=200,
-                    content={
-                        "action": "reply",
-                        "replies": [response_text],
-                        "suggestions": metadata.get("suggestions", []),
-                        "session_id": session_id
-                    }
-                )
-            
-            # Check if we need to transfer
-            if metadata.get("action") == "transfer_to_agent":
-                # Build past_messages in SalesIQ format (message-by-message)
-                past_messages = build_past_messages(history)
-                
-                # Build conversation history text as fallback
-                conversation_text = ""
-                for msg in history:
-                    role = "User" if msg.get('role') == 'user' else "Bot"
-                    conversation_text += f"{role}: {msg.get('content', '')}\n"
-                
-                # Call SalesIQ API with structured history
-                logger.info(f"[Handler] Transferring {len(past_messages)} messages to agent")
-                api_result = salesiq_api.create_chat_session(
-                    session_id, 
-                    conversation_history=conversation_text,
-                    past_messages=past_messages
-                )
-                logger.info(f"[Handler] Transfer API result: {api_result}")
-                
-                if session_id in conversations:
-                    logger.info(f"[Metrics] 📊 CONVERSATION ENDED - Reason: Agent Transfer")
-                    metrics_collector.end_conversation(session_id, "escalated")
-                    state_manager.end_session(session_id, ConversationState.ESCALATED)
-                    del conversations[session_id]
-                
+        # GENERATE LLM RESPONSE (no handlers, just direct LLM)
+        if not response_text:
                 # Return transfer response
                 return JSONResponse(
                     status_code=200,
