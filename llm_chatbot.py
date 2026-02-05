@@ -171,6 +171,12 @@ Respond in JSON format:
             json_match = re.search(r'```(?:json)?\s*({.*?})\s*```', result_text, re.DOTALL)
             if json_match:
                 result_text = json_match.group(1)
+            # Log raw response for debugging
+            if not result_text or result_text[0] != '{':
+                logger.warning(f"[JSON Parse] Non-JSON response: {result_text[:200]}")
+            # Log raw response for debugging
+            if not result_text or result_text[0] != '{':
+                logger.warning(f"[JSON Parse] Non-JSON response: {result_text[:200]}")
             result = json.loads(result_text)
             
             return ClassificationResult(
@@ -222,9 +228,11 @@ Format:
             import json
             import re
             # Extract JSON from markdown code blocks if present
-            json_match = re.search(r'```(?:json)?\\s*({.*?})\\s*```', result_text, re.DOTALL)
+            json_match = re.search(r'```(?:json)?\s*({.*?})\s*```', result_text, re.DOTALL)
             if json_match:
                 result_text = json_match.group(1)
+            # Log for debugging
+            logger.debug(f"[JSON Parse] Attempting to parse: {result_text[:200]}...")
             result = json.loads(result_text)
             
             return {
@@ -1705,8 +1713,8 @@ async def _salesiq_webhook_inner(request: dict):
             metrics_collector.start_conversation(session_id, category)
             
             # Create state management session
-            state_session = state_manager.create_session(session_id, category)
-            logger.info(f"[State] Session {session_id} created in state: {state_session.state.value}")
+            state_manager.start_session(session_id)
+            logger.info(f"[State] Session {session_id} created in state: NEW")
         
         # Detect state transition from user message
         current_session = state_manager.get_session(session_id)

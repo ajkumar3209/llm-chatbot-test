@@ -13,19 +13,24 @@ class ZohoSalesIQAPI:
     """Simple SalesIQ API Integration (Visitor API)"""
     
     def __init__(self):
-        # Load configuration
+        # Load configuration - NO HARDCODED DEFAULTS (Security fix)
         self.access_token = os.getenv("SALESIQ_ACCESS_TOKEN", "").strip()
         self.department_id = os.getenv("SALESIQ_DEPARTMENT_ID", "").strip()
         self.app_id = os.getenv("SALESIQ_APP_ID", "").strip()
         self.screen_name = os.getenv("SALESIQ_SCREEN_NAME", "rtdsportal").strip()
         
-        # OAuth credentials for token refresh
-        self.client_id = os.getenv("SALESIQ_CLIENT_ID", "1005.2CC62FI55NQZG6QT3FM8HDRIMMV2ZP").strip()
-        self.client_secret = os.getenv("SALESIQ_CLIENT_SECRET", "dc4e57f035c348f3e463c5fb03fa98fb318dee9740").strip()
-        self.refresh_token = os.getenv("SALESIQ_REFRESH_TOKEN", "1005.ca064ba4e1942c852537587184b9a71d.fdfd4da49245cce8fa14bd5af8d2192e").strip()
+        # OAuth credentials for token refresh - MUST be in environment
+        self.client_id = os.getenv("SALESIQ_CLIENT_ID", "").strip()
+        self.client_secret = os.getenv("SALESIQ_CLIENT_SECRET", "").strip()
+        self.refresh_token = os.getenv("SALESIQ_REFRESH_TOKEN", "").strip()
         
         # Base URL for Visitor API v1 (official endpoint per API docs)
         self.base_url = f"https://salesiq.zoho.in/api/visitor/v1/{self.screen_name}"
+        
+        # Validate critical credentials on startup
+        if not all([self.client_id, self.client_secret, self.refresh_token]):
+            logger.error("[ZohoAPI] CRITICAL: Missing OAuth credentials in environment variables!")
+            logger.error("[ZohoAPI] Required: SALESIQ_CLIENT_ID, SALESIQ_CLIENT_SECRET, SALESIQ_REFRESH_TOKEN")
         
         # Enable only if required config exists
         self.enabled = bool(self.access_token and self.department_id and self.app_id)
