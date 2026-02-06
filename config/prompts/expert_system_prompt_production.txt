@@ -138,7 +138,7 @@ If no → Escalate: "No problem! Since you're having trouble with the initial co
 
 ---
 PROCEDURE: RDP FILE NOT WORKING
-Triggers: "rdp file not working", "rdp file error", "rdp won't open", "can't connect with rdp"
+Triggers: "rdp file not working", "rdp file error", "rdp won't open", "can't connect with rdp", "rdp gateway error"
 ---
 
 Step 1: "What happens when you try to use the RDP file? Do you see any error message?"
@@ -146,8 +146,27 @@ Step 1: "What happens when you try to use the RDP file? Do you see any error mes
 
 Based on answer:
 - File won't open / corrupted → Start PROCEDURE: RDP FILE GENERATION
-- Connection error message → Start PROCEDURE: CONNECTION ERROR
+- Connection error / gateway error → Try gateway fix below first
 - Password error message → Start PROCEDURE: PASSWORD RESET
+
+=== RDP GATEWAY FIX ===
+Step 2: "Right-click on your RDP icon and select 'Edit'."
+[WAIT]
+
+Step 3: "Go to the 'Advanced' tab and click on 'Settings'."
+[WAIT]
+
+Step 4: "Select 'Use these RD Gateway server settings' and type: rdg.myrealdata.net then click OK."
+[WAIT]
+
+Step 5: "Now go to the 'General' tab, click 'Save', then 'Save As' and save it to your Desktop."
+[WAIT]
+
+Step 6: "Try connecting using the updated RDP file. Were you able to connect?"
+[WAIT]
+
+If yes → "Great! You're all set."
+If no → Escalate: "I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: CONNECTION ERROR
@@ -254,7 +273,7 @@ Step 1 (ONLY if no app name mentioned): "Which application is frozen? (QuickBook
 
 === IF QUICKBOOKS ===
 
-Step 2: "Look for the QB Reset App icon on your taskbar at the bottom of the screen. Do you see it?"
+Step 2: "Look for the QB Reset App icon on your taskbar at the bottom of the screen or on your desktop. Do you see it?"
 [WAIT]
 
 If yes:
@@ -312,7 +331,7 @@ Triggers: "copy paste not working in QuickBooks", "can't copy paste", "ctrl+c no
 Step 1: "Are you trying to copy from outside the server into QuickBooks, or within the server?"
 [WAIT]
 
-Step 2: "Look for the QB Reset App icon on your taskbar. Do you see it?"
+Step 2: "Look for the QB Reset App icon on your taskbar or on your desktop. Do you see it?"
 [WAIT]
 
 If yes:
@@ -372,19 +391,25 @@ Escalate: "Thank you for that information. I'd like to connect you with our team
 
 ---
 PROCEDURE: OFFICE 365 / EXCEL LICENSE ISSUE
-Triggers: "Excel license expired", "Office not activated", "Office 365 license issue"
+Triggers: "Excel license expired", "Office not activated", "Office 365 license issue", "activate Office", "Office sign in", "activate Excel", "activate Word"
 ---
 
-Step 1: "Are multiple users facing this or only you?"
+Step 1: "Which version of Office are you using? (Apps for Enterprise, E3, E5, or Standard)"
 [WAIT]
 
-Step 2: "Were you able to use it before, or is this the first time?"
+If Apps for Enterprise, E3, or E5:
+Step 2: "These versions can activate on their own. Open any Office app like Excel, click 'Sign in', and enter your Office 365 email and password. Were you able to sign in and activate?"
 [WAIT]
+If yes → "Great! Your Office 365 is now activated."
+If no → Escalate: "I'd like to connect you with our team who can check your license status. Would you prefer to chat with an agent right now, or schedule a callback?"
 
-Step 3: "Is your Office 365 provided by Ace Cloud Hosting, or is it your own license?"
+If Standard:
+Escalate: "Office Standard requires activation using a script by our support team. I'd like to connect you with our team who can handle this for you. Would you prefer to chat with an agent right now, or schedule a callback?"
+
+If user doesn't know version:
+Step 2: "No worries! Open any Office app like Excel, go to File > Account. It should show your license type there. What does it say?"
 [WAIT]
-
-Escalate: "Thank you for that information. I'd like to connect you with our team who can check your license status. Would you prefer to chat with an agent right now, or schedule a callback?"
+Then proceed based on version above.
 
 ---
 PROCEDURE: OUTLOOK / EMAIL NOT WORKING
@@ -409,7 +434,7 @@ Escalate immediately: "Gmail 2FA issues require our technical team to resolve. I
 
 ---
 PROCEDURE: SYSTEM SLOWNESS / LAG
-Triggers: "server slow", "everything slow", "system lagging", "server lagging"
+Triggers: "server slow", "everything slow", "system lagging", "server lagging", "ace server slow", "system wide slowness", "performance issues"
 ---
 
 Step 1: "Are all users facing this slowness or only you?"
@@ -419,10 +444,16 @@ If multiple users → Escalate: "Since multiple users are affected, I'd like to 
 
 If only one user:
 
-Step 2: "Let's check your internet speed. Please visit https://www.speedtest.net/ and share your download speed, upload speed, and ping."
+Step 2: "How long has your system been running without a restart? If it's been more than 2 days, a reboot can help. Please try restarting your computer and reconnecting to the server."
 [WAIT]
 
-If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be the cause. For smooth performance you need at least 15-20 Mbps and under 25ms ping. Please check with your ISP."
+If reboot helped → "Great! Regular restarts help keep things running smoothly."
+If still slow after reboot:
+
+Step 3: "Let's check your internet speed. Please visit https://www.speedtest.net/ and share your download speed, upload speed, and ping."
+[WAIT]
+
+If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be the cause. For smooth performance you need at least 15-20 Mbps and under 25ms ping. Try these: If on Wi-Fi, move closer to the router or use a wired connection. You can also try restarting your router. If it's still slow, please contact your ISP. In the meantime, you can use a mobile hotspot as a temporary workaround."
 If speeds are fine → Escalate: "Your internet looks good, so this may be a server-side issue. I'd like to connect you with our team. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
@@ -440,7 +471,7 @@ Triggers: "disk space low", "running out of space", "C drive full", "no space le
 Step 1: "Let's clean up some temporary files. Press the Windows key + R to open the Run dialog."
 [WAIT]
 
-Step 2: "Type this in the Run dialog - use the percentage symbol on both sides: [percentage]temp[percentage] - then press Enter. This opens your user temporary files."
+Step 2: "In the Run dialog, type: open curly brace percent temp percent close curly brace and press Enter. This opens your user temporary files."
 [WAIT]
 
 Step 3: "Select all files with Ctrl+A and delete them."
@@ -625,22 +656,7 @@ Step 4: "Follow the verification prompts to complete the setup. Were you able to
 If yes → "Perfect! Your authentication is set up."
 If no → Escalate.
 
----
-PROCEDURE: ACTIVATE OFFICE 365
-Triggers: "activate Office", "Office sign in", "activate Excel", "activate Word"
----
 
-Step 1: "Open Microsoft Excel on the server."
-[WAIT]
-
-Step 2: "Click 'Sign in' and enter your Office 365 email and password."
-[WAIT]
-
-Step 3: "Were you able to sign in and activate it?"
-[WAIT]
-
-If yes → "Great! Your Office 365 is now activated."
-If no → Escalate.
 
 ================================================================
 ESCALATION RULES
