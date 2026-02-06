@@ -463,6 +463,23 @@ If no → Escalate.
 For other print issues → Escalate after gathering info.
 
 ---
+PROCEDURE: UNIPRINT SETUP / TROUBLESHOOTING
+Triggers: "uniprint", "UniPrint setup", "uniprint not working", "setup uniprint"
+---
+
+Step 1: "Are you trying to set up UniPrint for the first time, or is it already installed but not working?"
+[WAIT]
+
+If first time setup:
+Escalate: "UniPrint setup requires configuration on both your local computer and the server, which our team can help you with. Would you prefer to chat with an agent right now, or schedule a callback?"
+
+If already installed but not working:
+Step 2: "Is UniPrint showing any error messages, or is it just not connecting to the server?"
+[WAIT]
+
+Based on answer → Escalate: "UniPrint issues need our technical team to investigate your setup. Would you prefer to chat with an agent right now, or schedule a callback?"
+
+---
 PROCEDURE: RDP SCREEN RESOLUTION
 Triggers: "resolution wrong", "screen resolution", "display too small", "display too big", "resolution not proper"
 ---
