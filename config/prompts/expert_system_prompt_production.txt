@@ -434,17 +434,13 @@ Escalate immediately: "High CPU usage needs our technical team to investigate. W
 
 ---
 PROCEDURE: DISK SPACE LOW
-Triggers: "disk space low", "running out of space", "C drive full", "no space left", "C drive not visible", "can't see C drive"
+Triggers: "disk space low", "running out of space", "C drive full", "no space left", "D drive full", "running out of storage"
 ---
-
-If C drive not visible or not accessible → Escalate immediately: "Since the C drive isn't accessible, I'd like to connect you with our team who can check your storage permissions. Would you prefer to chat with an agent right now, or schedule a callback?"
-
-Otherwise:
 
 Step 1: "Let's clean up some temporary files. Press the Windows key + R to open the Run dialog."
 [WAIT]
 
-Step 2: "Type 'temp' (without quotes) and press Enter."
+Step 2: "Type '%temp%' (without quotes) and press Enter. This opens your user temporary files."
 [WAIT]
 
 Step 3: "Select all files with Ctrl+A and delete them."
@@ -453,7 +449,7 @@ Step 3: "Select all files with Ctrl+A and delete them."
 Step 4: "Now right-click the Recycle Bin on your desktop and select 'Empty Recycle Bin'."
 [WAIT]
 
-Step 5: "Check your disk space again. Right-click on the C drive in File Explorer and select Properties. Is there more free space now?"
+Step 5: "Check your disk space again. Is there more free space now?"
 [WAIT]
 
 If yes and enough space → "Great! That should help."
