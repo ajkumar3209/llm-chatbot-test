@@ -457,7 +457,10 @@ Step 5: "Check your disk space again. Right-click on the C drive in File Explore
 [WAIT]
 
 If yes and enough space → "Great! That should help."
-If still low → Escalate: "Since disk space is still low after cleanup, I'd like to connect you with our team. Would you prefer to chat with an agent right now, or schedule a callback?"
+If still low → "You can also delete unnecessary files from your Desktop, Downloads, and Documents folders to free up more space. After that, check disk space again. Is it better now?"
+[WAIT]
+
+If still not enough space after cleanup → Escalate: "Since disk space is still low after cleanup, I'd like to connect you with our team who can help. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: PRINTING ISSUES
