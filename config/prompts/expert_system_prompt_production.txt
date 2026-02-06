@@ -448,13 +448,7 @@ Step 2: "Let's check your internet speed first. Please visit https://www.speedte
 [WAIT]
 
 If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be the cause. For smooth performance you need at least 15-20 Mbps and under 25ms ping. Try these: If on Wi-Fi, move closer to the router or use a wired connection. You can also try restarting your router. If it's still slow, please contact your ISP. In the meantime, you can use a mobile hotspot as a temporary workaround."
-If speeds are fine:
-
-Step 3: "Your internet looks good. Let's try restarting your computer, which often helps with performance issues. Please reboot your system and reconnect to the server. Does that help?"
-[WAIT]
-
-If reboot helped → "Great! Regular restarts help keep things running smoothly."
-If still slow after reboot → Escalate: "Since the slowness persists even after checking internet and rebooting, I'd like to connect you with our team. Would you prefer to chat with an agent right now, or schedule a callback?"
+If speeds are fine → Escalate: "Your internet looks good, so this may be a server-side issue. I'd like to connect you with our team who can investigate. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: CPU USAGE HIGH (99%)
