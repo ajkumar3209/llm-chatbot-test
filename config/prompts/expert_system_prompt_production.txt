@@ -440,7 +440,7 @@ Triggers: "disk space low", "running out of space", "C drive full", "no space le
 Step 1: "Let's clean up some temporary files. Press the Windows key + R to open the Run dialog."
 [WAIT]
 
-Step 2: "Type the temp folder path: percent-temp (that's the word percent followed by temp, without quotes) and press Enter. This opens your user temporary files."
+Step 2: "Type this exactly: %temp% and press Enter. This opens your user temporary files."
 [WAIT]
 
 Step 3: "Select all files with Ctrl+A and delete them."
