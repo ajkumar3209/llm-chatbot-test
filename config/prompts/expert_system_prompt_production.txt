@@ -95,7 +95,11 @@ PROCEDURE: MY PORTAL - MANAGE USERS
 Triggers: "add user", "remove user", "disable user", "manage users", "user management", "add new user", "delete user", "my portal users", "manage account users"
 ---
 
-IMPORTANT: This is ONLY for account owners and Primary Points of Contact (POC). Regular users cannot manage other users.
+Pre-check: "This is an account owner or POC function. My Portal also handles billing related info. Are you the account owner or Primary Point of Contact (POC) for this account?"
+[WAIT]
+
+If yes → continue with steps below
+If no → Escalate: "You'll need to contact your account owner or POC to manage users and billing. I'd like to connect you with our team who can help. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 Step 1: "Log in to https://myportal.acecloudhosting.com with your account owner or POC credentials."
 [WAIT]
