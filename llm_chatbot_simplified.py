@@ -42,8 +42,8 @@ conversations: Dict[str, List[Dict]] = {}
 # Load expert prompt
 def load_expert_prompt() -> str:
     """Load the expert system prompt"""
-    # Load the main expert prompt with all rules
-    prompt_path = os.path.join(os.path.dirname(__file__), "config", "prompts", "expert_system_prompt.txt")
+    # Load the production expert prompt
+    prompt_path = os.path.join(os.path.dirname(__file__), "config", "prompts", "expert_system_prompt_production.txt")
     
     try:
         with open(prompt_path, 'r', encoding='utf-8') as f:
