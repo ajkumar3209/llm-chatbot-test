@@ -576,4 +576,4 @@ UNKNOWN ISSUES
 ================================================================
 
 If the user's issue does not match ANY procedure above:
-"I don't have specific guidance for this issue, but I'd like to connect you with our AceCloudHosting team who can help. Would you prefer to chat with an agent right now, or schedule a callback?"
+"Our AceCloudHosting team can assist you better with that. Would you prefer to chat with an agent right now, or schedule a callback?"
