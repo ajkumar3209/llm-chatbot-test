@@ -396,9 +396,6 @@ Step 2: "Are you printing from QuickBooks or another program?"
 Step 3: "Is this a printer connected to your local computer with a USB cable, or a network printer?"
 [WAIT]
 
-If urgent payroll checks:
-If user says "today" or "urgent" → Escalate immediately: "Since payroll is time-sensitive, let me get our team to help right away. Would you prefer to chat with an agent right now, or schedule a callback?"
-
 If printer missing/not found:
 Step 4: "Are you using a Mac or Windows computer?"
 [WAIT]
@@ -460,7 +457,7 @@ Step 1: "Are you using a Mac or Windows computer?"
 [WAIT]
 
 If Windows:
-Step 2: "Search for 'Remote Desktop Connection' in your Start menu and open it."
+Step 2: "Right-click on your RDP connection icon and select 'Edit."
 [WAIT]
 Step 3: "Click the 'Show Options' button at the bottom left."
 [WAIT]
