@@ -311,10 +311,9 @@ async def webhook(request: Request):
         
         # ESCALATION TRIGGER 2: LLM generated escalation message (detected by keywords)
         llm_generated_escalation = any(phrase in bot_response.lower() for phrase in [
-            "let me connect you", "connect you with our", "connect you with the", 
-            "let me get our team", "immediate attention", "technical team",
-            "connect you with our technical team", "i understand this is",
-            "thank you for your patience"
+            "i'd like to connect you", "let me connect you", "connect you with our", "connect you with the",
+            "would you like me to connect you", "let me get our team", "immediate attention", "technical team",
+            "connect you with our technical team", "i understand this is", "thank you for your patience"
         ])
         
         needs_escalation = user_asks_escalation or llm_generated_escalation
