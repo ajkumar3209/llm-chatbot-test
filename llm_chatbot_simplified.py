@@ -211,8 +211,8 @@ def generate_llm_response(message: str, history: List[Dict]) -> str:
         response = client.chat.completions.create(
             model="google/gemini-2.5-flash-lite",
             messages=messages,
-            temperature=0.7,
-            max_tokens=500
+            temperature=0.3,
+            max_tokens=300
         )
         
         bot_response = response.choices[0].message.content.strip()
