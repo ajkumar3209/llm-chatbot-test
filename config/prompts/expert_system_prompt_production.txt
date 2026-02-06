@@ -343,10 +343,7 @@ If multiple users → Escalate: "Since multiple users are affected, our team nee
 
 If only one user:
 
-Step 2: "Are all affected users working from the same location or different locations?"
-[WAIT]
-
-Step 3: "Let's check your internet speed. Please visit https://www.speedtest.net/ and share your download speed, upload speed, and ping."
+Step 2: "Let's check your internet speed. Please visit https://www.speedtest.net/ and share your download speed, upload speed, and ping."
 [WAIT]
 
 If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be the cause. For smooth performance you need at least 15-20 Mbps and under 25ms ping. Please check with your ISP."
