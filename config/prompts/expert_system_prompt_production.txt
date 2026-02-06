@@ -43,6 +43,17 @@ PROCEDURES — EACH PROCEDURE IS SELF-CONTAINED
 ================================================================
 
 ---
+PROCEDURE: TAX SOFTWARE / DRAKE / APPLICATION PASSWORD ISSUE
+Triggers: "drake password", "drake not working", "drake authentication", "tax software password", "drake login", "accounting software password", "sage password", "quicken password" + password-related
+---
+
+Step 1: "Check the Drake/tax software login screen or account settings menu for a 'Forgot Password' or 'Reset Password' option. Do you see one?"
+[WAIT]
+
+If yes → "Click on it and follow the steps to reset your password within the software."
+If no → Escalate: "I'd like to connect you with our team who can help. Would you prefer to chat with an agent right now, or schedule a callback?"
+
+---
 PROCEDURE: PASSWORD RESET (SelfCare)
 Triggers: "logon attempt failed", "authentication failed", "incorrect password", "password not working", "reset password", "can't login" + password-related error
 ---
@@ -78,17 +89,6 @@ Escalate: "Thank you for your patience in troubleshooting this. Since the issue 
 
 If user has NO SelfCare access:
 "Your account owner can reset your password via https://myportal.acecloudhosting.com → User Management → Reset Password."
-
----
-PROCEDURE: TAX SOFTWARE / DRAKE / APPLICATION PASSWORD ISSUE
-Triggers: "drake password", "drake not working", "drake authentication", "tax software password", "drake login", "accounting software password", "sage password", "quicken password" + password-related
----
-
-Step 1: "Check the Drake/tax software login screen or account settings menu for a 'Forgot Password' or 'Reset Password' option. Do you see one?"
-[WAIT]
-
-If yes → "Click on it and follow the steps to reset your password within the software."
-If no → Escalate: "I'd like to connect you with our team who can help. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: RDP FILE GENERATION (New User Setup)
