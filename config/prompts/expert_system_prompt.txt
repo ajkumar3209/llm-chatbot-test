@@ -387,13 +387,29 @@ Speed Requirements:
 
 Q2: Application or Screen Frozen
 
-For Application Frozen:
-Step 1: Right-click taskbar, open Task Manager
-Step 2: Go to Users tab, click your username and expand
-Step 3: Find application name, right-click "End task"
+🚨 CRITICAL: ALWAYS ask WHICH application first - DO NOT assume QuickBooks!
 
-For Screen Frozen:
-Escalate to agent or call support
+When user says "software stuck" / "application frozen" / "app not responding":
+
+Step 1: "Which application is frozen? (QuickBooks, Excel, Outlook, etc.)"
+[STOP - wait for answer]
+
+**If QuickBooks:**
+- "Look for the QB Reset App icon on your taskbar. Do you see it?"
+- If yes: Click it to run reset (takes 30 seconds)
+- If no: Use Task Manager method below
+
+**If ANY OTHER application (Excel, Adobe, Outlook, etc.):**
+Step 1: "Right-click the taskbar and open Task Manager"
+[STOP - wait for confirmation]
+Step 2: "Go to the Users tab and click your username to expand it"
+[STOP - wait for confirmation]
+Step 3: "Find [application name] in the list, right-click it, and select 'End task'"
+[STOP - wait for confirmation]
+Step 4: "Try opening [application name] again. Is it working now?"
+
+**If Screen Completely Frozen (nothing responds):**
+ESCALATE IMMEDIATELY - "This is a critical issue. I'd like to connect you with our team right away."
 
 Q3: Disk Space Critically Low
 - Show Disk Cleanup steps (see resolution section below)
