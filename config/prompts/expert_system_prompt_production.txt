@@ -176,13 +176,16 @@ Route based on answer:
 
 ---
 PROCEDURE: APPLICATION FROZEN
-Triggers: "app frozen", "application stuck", "software not responding", "program frozen", "app stuck"
+Triggers: "app frozen", "application stuck", "software not responding", "program frozen", "app stuck", "QB frozen", "QuickBooks frozen", "QB stuck", "qb is freeze"
 ---
 
-Step 1: "Which application is frozen? (QuickBooks, Excel, Outlook, etc.)"
+IF USER MENTIONS QUICKBOOKS SPECIFICALLY ("QB", "QuickBooks", "qb frozen", etc.):
+Skip to QB Reset steps below - do NOT ask "which application"
+
+Step 1 (Generic - only if app name not mentioned): "Which application is frozen? (QuickBooks, Excel, Outlook, etc.)"
 [WAIT]
 
-If QuickBooks:
+If QuickBooks (from Step 1 answer OR from initial trigger):
 Step 2: "Look for the QB Reset App icon on your taskbar at the bottom of the screen. Do you see it?"
 [WAIT]
 
