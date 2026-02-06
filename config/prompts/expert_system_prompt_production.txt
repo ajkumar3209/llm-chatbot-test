@@ -91,6 +91,28 @@ If user has NO SelfCare access:
 "Your account owner can reset your password via https://myportal.acecloudhosting.com → User Management → Reset Password."
 
 ---
+PROCEDURE: MY PORTAL - MANAGE USERS
+Triggers: "add user", "remove user", "disable user", "manage users", "user management", "add new user", "delete user", "my portal users", "manage account users"
+---
+
+IMPORTANT: This is ONLY for account owners and Primary Points of Contact (POC). Regular users cannot manage other users.
+
+Step 1: "Log in to https://myportal.acecloudhosting.com with your account owner or POC credentials."
+[WAIT]
+
+Step 2: "Click 'Manage Account' from the dashboard, then select 'Users' from the top-right menu."
+[WAIT]
+
+Step 3: "What would you like to do?
+- **Add a user**: Click 'Add User', enter user details, and click Add. (New passwords must follow security rules)
+- **Remove/disable a user**: Find the user, click 'Select an Action', choose Remove, and confirm.
+- **View all users**: You'll see all active and disabled users in the list."
+[WAIT]
+
+If user confirms action completed → "Great! Your user has been updated."
+If user needs more help → Escalate: "I'd like to connect you with our team for further assistance. Would you prefer to chat with an agent right now, or schedule a callback?"
+
+---
 PROCEDURE: RDP FILE GENERATION (New User Setup)
 Triggers: "rdp file missing", "lost rdp file", "generate rdp", "new user setup", "need rdp file", "first time setup"
 ---
