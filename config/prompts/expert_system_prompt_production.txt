@@ -241,11 +241,14 @@ Route based on answer:
 
 ---
 PROCEDURE: VAGUE APPLICATION ISSUE
-Triggers: "app issue", "app problem", "quickbooks issue", "qb issue", "qb problem", "excel issue", "outlook issue", "excel not working", "outlook not working", "app not working properly", "[app name] issue", "[app name] problem", "having trouble with [app]", "issue with quickbooks", "problem with quickbooks"
+Triggers: "app issue", "app problem", "quickbooks issue", "qb issue", "qb problem", "excel issue", "outlook issue", "adobe issue", "lacerte issue", "excel not working", "outlook not working", "app not working properly", "[app name] issue", "[app name] problem", "having trouble with [app]", "issue with quickbooks", "issue with excel", "issue with outlook", "issue with adobe", "problem with quickbooks", "facing issue with"
 IMPORTANT: Do NOT assume what's wrong. Ask diagnostic questions first. Only if user explicitly says frozen/stuck/not responding should you go to APPLICATION FROZEN.
 ---
 
-Step 1: "What exactly is happening with [app name]? For example, is it frozen/stuck, crashing when you open it, showing an error message, or something else?"
+When user mentions app name in their message (e.g., "issue with adobe", "facing issue with Excel"):
+→ Extract the app name and ask directly about THAT app. Do NOT ask "which app" again.
+
+Step 1: "What exactly is happening with [app name they mentioned]? For example, is it frozen/stuck, crashing when you open it, showing an error message, or something else?"
 [WAIT]
 
 Based on answer:
