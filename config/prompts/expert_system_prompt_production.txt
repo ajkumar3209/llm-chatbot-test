@@ -196,18 +196,21 @@ If speeds are fine → Escalate: "Your internet looks good, so this may be a ser
 
 ---
 PROCEDURE: SERVER DISCONNECTION
-Triggers: "rdp keeps disconnecting", "connection drops", "keeps getting disconnected", "session drops", "going off in the middle", "disconnecting randomly"
+Triggers: "rdp keeps disconnecting", "connection drops", "keeps getting disconnected", "session drops", "going off in the middle", "disconnecting randomly", "server issue", "server problem"
 IMPORTANT: This is NOT a password issue. Do not suggest password reset.
 ---
 
-Step 1: "Are multiple users experiencing this disconnection or only you?"
+Step 1: "What exactly is happening? Are you seeing any error messages when you disconnect?"
+[WAIT]
+
+Step 2: "Are multiple users experiencing this disconnection or only you?"
 [WAIT]
 
 If multiple users → Escalate: "Since multiple users are affected, I'd like to connect you with our team's attention right away. Would you prefer to chat with an agent now, or schedule a callback?"
 
 If only one user:
 
-Step 2: "Let's check your internet connection. Can you visit https://www.speedtest.net/ and share your download speed, upload speed, and ping?"
+Step 3: "Let's check your internet connection. Can you visit https://www.speedtest.net/ and share your download speed, upload speed, and ping?"
 [WAIT]
 
 If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be causing the disconnections. For stable RDP, you need at least 15-20 Mbps and under 25ms ping. Please check with your ISP."
@@ -238,6 +241,22 @@ Route based on answer:
 - "account locked" → "If your account was locked due to multiple failed attempts, it should auto-unlock in about 15 minutes. Or your account owner can unlock it immediately via https://myportal.acecloudhosting.com. Would you like to wait, or should I connect you with our team?"
 - "Remote Desktop can't connect... remote computer turned off" → Ask "Are other users able to connect?" then escalate if server issue
 - Any other error → Ask "Are multiple users affected or only you?" then escalate with "I'd like to connect you with our team who can investigate this. Would you prefer to chat with an agent right now, or schedule a callback?"
+
+---
+PROCEDURE: VAGUE ISSUE (General troubleshooting entry point)
+Triggers: "facing issue", "having issue", "experiencing issue", "issue", "problem", "not working", "trouble"
+IMPORTANT: Ask what the issue is first, then route intelligently based on whether it's server-related or application-related.
+---
+
+Step 1: "What issue are you experiencing? Please describe what's happening."
+[WAIT]
+
+Based on answer, route to appropriate procedure:
+- If mentions "server", "connection", "disconnection", "slow", "RDP", "remote desktop" → Ask follow-up questions about the specific server issue (see below)
+- If mentions specific application name (QB, Excel, Outlook, Adobe, etc.) → Go to VAGUE APPLICATION ISSUE
+- If mentions "frozen", "stuck", "not responding" → Go to APPLICATION FROZEN
+- If mentions "password", "login", "locked out" → Go to PASSWORD RESET or LOGIN ERROR procedures
+- If unclear → Ask clarifying question: "Is this related to connecting to the server, or is it about a specific application?"
 
 ---
 PROCEDURE: VAGUE APPLICATION ISSUE
@@ -450,10 +469,13 @@ PROCEDURE: OUTLOOK / EMAIL NOT WORKING
 Triggers: "can't send email", "Outlook not working", "email not sending", "email error"
 ---
 
-Step 1: "Are all users facing this issue or only you?"
+Step 1: "What exactly is happening with Outlook? Are you seeing any error messages?"
 [WAIT]
 
-Step 2: "Can you try sending an email from the web version at https://outlook.office.com/ and let me know if that works?"
+Step 2: "Are all users facing this issue or only you?"
+[WAIT]
+
+Step 3: "Can you try sending an email from the web version at https://outlook.office.com/ and let me know if that works?"
 [WAIT]
 
 If web works → Escalate: "Since the web version works but the desktop app doesn't, I'd like to connect you with our team to check the Outlook configuration. Would you prefer to chat with an agent right now, or schedule a callback?"
