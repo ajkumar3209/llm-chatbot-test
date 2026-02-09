@@ -268,8 +268,12 @@ IF USER MENTIONS QUICKBOOKS/QB in their message ("QB", "QuickBooks", "qb frozen"
 IF USER MENTIONS FROZEN + SPECIFIC APP (Excel frozen, Outlook stuck, etc.):
 → Go directly to Task Manager method for that app - do NOT ask "which application"
 
-Step 1 (ONLY if no app name mentioned): "Which application is frozen? (QuickBooks, Excel, Outlook, etc.)"
+Step 1 (ONLY if no app name mentioned): "Which application is frozen? (QuickBooks, Excel, Outlook, Adobe, etc.)"
 [WAIT]
+
+Based on app mentioned:
+- If QB/QuickBooks → Go to QB troubleshooting below
+- If Excel, Outlook, Adobe, or any other app → Go to TASK MANAGER METHOD below
 
 === IF QUICKBOOKS ===
 
@@ -290,6 +294,13 @@ If no → "Since QB Reset didn't solve it, let's use Task Manager. Right-click o
 Then continue with TASK MANAGER steps below.
 
 If no QB Reset icon → "Let's force-close QuickBooks using Task Manager instead. Right-click on the taskbar at the bottom and select 'Task Manager'."
+[WAIT - user confirms opening Task Manager]
+
+Then continue with TASK MANAGER steps below.
+
+=== FOR OTHER APPS (Excel, Outlook, Adobe, etc.) ===
+
+Step 2: "Let's force-close [app name] using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
 [WAIT - user confirms opening Task Manager]
 
 Then continue with TASK MANAGER steps below.
