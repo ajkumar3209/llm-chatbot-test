@@ -265,15 +265,18 @@ IMPORTANT: Only use this if user explicitly says frozen/stuck/not responding. Do
 IF USER MENTIONS QUICKBOOKS/QB in their message ("QB", "QuickBooks", "qb frozen", etc.):
 → Go directly to QB troubleshooting below - do NOT ask "which application"
 
-IF USER MENTIONS FROZEN + SPECIFIC APP (Excel frozen, Outlook stuck, etc.):
-→ Go directly to Task Manager method for that app - do NOT ask "which application"
+IF USER MENTIONS FROZEN + SPECIFIC APP (Excel frozen, Outlook stuck, Lacerte frozen, Adobe frozen, etc.):
+→ Go directly to Task Manager method for that app - do NOT ask "which application" - do NOT question the app name
 
-Step 1 (ONLY if no app name mentioned): "Which application is frozen? (QuickBooks, Excel, Outlook, Adobe, etc.)"
-[WAIT]
+Step 1 (ONLY if no app name mentioned): "Which application is not responding?"
+[WAIT - user provides app name]
+
+IMPORTANT: Accept ANY app name without questioning. Do NOT ask "did you mean...?" or "I'm not familiar with..."
+Just proceed with the appropriate troubleshooting below.
 
 Based on app mentioned:
 - If QB/QuickBooks → Go to QB troubleshooting below
-- If Excel, Outlook, Adobe, or any other app → Go to TASK MANAGER METHOD below
+- If ANY other app (Excel, Outlook, Adobe, Lacerte, Chrome, etc.) → Go to TASK MANAGER METHOD below
 
 === IF QUICKBOOKS ===
 
