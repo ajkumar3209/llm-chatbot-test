@@ -506,7 +506,7 @@ Triggers: "disk space low", "running out of space", "C drive full", "no space le
 Step 1: "Let's clean up some temporary files. Press the Windows key + R to open the Run dialog."
 [WAIT]
 
-Step 2: "In the Run dialog, type: open curly brace percent temp percent close curly brace and press Enter. This opens your user temporary files."
+Step 2: "In the Run dialog, type these 6 characters exactly: PERCENT-sign temp PERCENT-sign (replace PERCENT-sign with the % symbol) and press Enter. This opens your user temporary files."
 [WAIT]
 
 Step 3: "Select all files with Ctrl+A and delete them."
