@@ -241,15 +241,15 @@ Route based on answer:
 
 ---
 PROCEDURE: VAGUE APPLICATION ISSUE
-Triggers: "excel not working", "outlook not working", "app not working properly", "[app name] issue", "[app name] problem", "having trouble with [app]"
-IMPORTANT: Do NOT assume what's wrong. Ask diagnostic questions first.
+Triggers: "app issue", "app problem", "quickbooks issue", "qb issue", "qb problem", "excel issue", "outlook issue", "excel not working", "outlook not working", "app not working properly", "[app name] issue", "[app name] problem", "having trouble with [app]", "issue with quickbooks", "problem with quickbooks"
+IMPORTANT: Do NOT assume what's wrong. Ask diagnostic questions first. Only if user explicitly says frozen/stuck/not responding should you go to APPLICATION FROZEN.
 ---
 
 Step 1: "What exactly is happening with [app name]? For example, is it frozen/stuck, crashing when you open it, showing an error message, or something else?"
 [WAIT]
 
 Based on answer:
-- If frozen/stuck/not responding → Start PROCEDURE: APPLICATION FROZEN
+- If frozen/stuck/not responding/frozn → Start PROCEDURE: APPLICATION FROZEN
 - If crashing → Gather info then escalate
 - If error message → Ask what the error says, then escalate
 - If Excel + license/activation issue → Start PROCEDURE: OFFICE 365 / EXCEL LICENSE ISSUE
@@ -258,8 +258,8 @@ Based on answer:
 
 ---
 PROCEDURE: APPLICATION FROZEN
-Triggers: "app frozen", "application stuck", "software not responding", "program frozen", "app stuck", "not responding", "QB frozen", "QuickBooks frozen", "QB stuck", "qb is freeze", "Excel frozen", "Outlook frozen", "Excel stuck"
-IMPORTANT: Only use this if user explicitly says frozen/stuck/not responding. Do NOT use for vague "not working" issues.
+Triggers: "frozen", "frozn", "stuck", "not responding", "application stuck", "software not responding", "program frozen", "app stuck", "QB frozen", "QuickBooks frozen", "QB stuck", "qb is freeze", "qb frozen", "excel frozen", "outlook frozen", "excel stuck"
+IMPORTANT: Only use this if user explicitly says frozen/stuck/not responding. Do NOT use for vague "not working" or general "issue" mentions.
 ---
 
 IF USER MENTIONS QUICKBOOKS/QB in their message ("QB", "QuickBooks", "qb frozen", etc.):
@@ -273,6 +273,8 @@ Step 1 (ONLY if no app name mentioned): "Which application is frozen? (QuickBook
 
 === IF QUICKBOOKS ===
 
+CRITICAL: ALWAYS try QB Reset first before using Task Manager. QB Reset is the fastest solution.
+
 Step 2: "Look for the QB Reset App icon on your taskbar at the bottom of the screen or on your desktop. Do you see it?"
 [WAIT]
 
@@ -282,9 +284,15 @@ Step 3: "Click it to run the reset. It takes about 30 seconds to complete."
 Step 4: "Try opening QuickBooks again. Is it working now?"
 [WAIT]
 If yes → "Great! You're all set."
-If no → Escalate: "Since QuickBooks is still not responding after all troubleshooting steps, I'd like to connect you with our team. Would you prefer to chat with an agent right now, or schedule a callback?"
+If no → "Since QB Reset didn't solve it, let's use Task Manager. Right-click on the taskbar and select 'Task Manager'."
+[WAIT - user confirms opening Task Manager]
 
-If no QB Reset icon → Continue with Task Manager method below:
+Then continue with TASK MANAGER steps below.
+
+If no QB Reset icon → "Let's force-close QuickBooks using Task Manager instead. Right-click on the taskbar at the bottom and select 'Task Manager'."
+[WAIT - user confirms opening Task Manager]
+
+Then continue with TASK MANAGER steps below.
 
 === TASK MANAGER METHOD (for all apps or when QB Reset not available) ===
 
