@@ -241,19 +241,22 @@ Route based on answer:
 
 ---
 PROCEDURE: VAGUE APPLICATION ISSUE
-Triggers: "app issue", "app problem", "quickbooks issue", "qb issue", "qb problem", "excel issue", "outlook issue", "adobe issue", "lacerte issue", "excel not working", "outlook not working", "app not working properly", "[app name] issue", "[app name] problem", "having trouble with [app]", "issue with quickbooks", "issue with excel", "issue with outlook", "issue with adobe", "problem with quickbooks", "facing issue with"
-IMPORTANT: Do NOT assume what's wrong. Ask diagnostic questions first. Only if user explicitly says frozen/stuck/not responding should you go to APPLICATION FROZEN.
+Triggers: "app issue", "app problem", "quickbooks issue", "qb issue", "qb problem", "excel issue", "outlook issue", "adobe issue", "lacerte issue", "tax act issue", "won't open", "won't start", "won't load", "can't open", "can't start", "can't load", "not opening", "not starting", "not loading", "excel not working", "outlook not working", "app not working properly", "[app name] issue", "[app name] problem", "having trouble with [app]", "issue with", "problem with", "facing issue with"
+IMPORTANT: Do NOT assume what's wrong. Ask diagnostic questions first. Only if user explicitly says frozen/stuck/not responding should you go to APPLICATION FROZEN. NEVER suggest a reset icon unless app is explicitly frozen/stuck.
 ---
 
-When user mentions app name in their message (e.g., "issue with adobe", "facing issue with Excel"):
-→ Extract the app name and ask directly about THAT app. Do NOT ask "which app" again.
+When user mentions app name or issue in their message (e.g., "issue with adobe", "won't open", "Tax Act won't load"):
+→ Extract the app name and/or issue type, then ask directly about it. Do NOT ask redundant questions.
 
-Step 1: "What exactly is happening with [app name they mentioned]? For example, is it frozen/stuck, crashing when you open it, showing an error message, or something else?"
+Step 1: "What exactly is happening with [app name]? For example, is it frozen/stuck, won't open/start, crashing, or showing an error message?"
 [WAIT]
 
 Based on answer:
 - If frozen/stuck/not responding/frozn → Start PROCEDURE: APPLICATION FROZEN
-- If crashing → Gather info then escalate
+- If "won't open" / "won't start" / "won't load" / "can't open" / "can't load" → Ask "Does it show an error message when you try to open it?" Then:
+  * If YES error message → Ask what the error is, then escalate
+  * If NO error message → Escalate: "The app won't start without an error message. I'd like to connect you with our team to investigate. Would you prefer to chat with an agent right now, or schedule a callback?"
+- If crashing on startup → Escalate: "Application crashes on startup. I'd like to connect you with our team who can investigate this. Would you prefer to chat with an agent right now, or schedule a callback?"
 - If error message → Ask what the error says, then escalate
 - If Excel + license/activation issue → Start PROCEDURE: OFFICE 365 / EXCEL LICENSE ISSUE
 - If Outlook + email issue → Start PROCEDURE: OUTLOOK / EMAIL NOT WORKING
@@ -262,7 +265,10 @@ Based on answer:
 ---
 PROCEDURE: APPLICATION FROZEN
 Triggers: "frozen", "frozn", "stuck", "not responding", "application stuck", "software not responding", "program frozen", "app stuck", "QB frozen", "QuickBooks frozen", "QB stuck", "qb is freeze", "qb frozen", "excel frozen", "outlook frozen", "excel stuck"
-IMPORTANT: Only use this if user explicitly says frozen/stuck/not responding. Do NOT use for vague "not working" or general "issue" mentions.
+IMPORTANT: Only use this if user explicitly says frozen/stuck/not responding. Do NOT use for:
+- "won't open", "won't load", "won't start", "can't open" (these are DIFFERENT issues - use VAGUE APPLICATION ISSUE instead)
+- vague "not working" or general "issue" mentions
+- error messages or crashes
 ---
 
 IF USER MENTIONS QUICKBOOKS/QB in their message ("QB", "QuickBooks", "qb frozen", etc.):
@@ -283,7 +289,8 @@ Based on app mentioned:
 
 === IF QUICKBOOKS ===
 
-CRITICAL: ALWAYS try QB Reset first before using Task Manager. QB Reset is the fastest solution.
+CRITICAL: QB Reset icon ONLY exists for QuickBooks. NO OTHER applications have reset icons (not Tax Act, not Adobe, not Excel, ONLY QuickBooks).
+ALWAYS try QB Reset first before using Task Manager. QB Reset is the fastest solution.
 
 Step 2: "Look for the QB Reset App icon on your taskbar at the bottom of the screen or on your desktop. Do you see it?"
 [WAIT]
@@ -304,7 +311,9 @@ If no QB Reset icon → "Let's force-close QuickBooks using Task Manager instead
 
 Then continue with TASK MANAGER steps below.
 
-=== FOR OTHER APPS (Excel, Outlook, Adobe, etc.) ===
+=== FOR OTHER APPS (Excel, Outlook, Adobe, Tax Act, Lacerte, etc.) ===
+
+CRITICAL: These apps do NOT have reset icons. Only QuickBooks has a reset icon. Go directly to Task Manager.
 
 Step 2: "Let's force-close [app name] using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
 [WAIT - user confirms opening Task Manager]

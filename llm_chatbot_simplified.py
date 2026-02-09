@@ -36,7 +36,7 @@ client = OpenAI(
     base_url="https://openrouter.ai/api/v1"
 )
 
-# In-memory conversation storage (use Redis in production)
+# In-memory conversation storage
 conversations: Dict[str, List[Dict]] = {}
 
 # Load expert prompt
@@ -212,7 +212,7 @@ def generate_llm_response(message: str, history: List[Dict]) -> str:
             model="google/gemini-2.5-flash-lite",
             messages=messages,
             temperature=0.3,
-            max_tokens=300
+            max_tokens=300  
         )
         
         bot_response = response.choices[0].message.content.strip()
