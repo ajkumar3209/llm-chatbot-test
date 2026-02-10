@@ -270,11 +270,24 @@ Step 1: "What issue are you experiencing? Please describe what's happening."
 [WAIT]
 
 Based on answer, route to appropriate procedure:
-- If mentions "server", "connection", "disconnection", "slow", "RDP", "remote desktop" → Ask follow-up questions about the specific server issue (see below)
 - If mentions specific application name (QB, Excel, Outlook, Adobe, etc.) → Go to VAGUE APPLICATION ISSUE
 - If mentions "frozen", "stuck", "not responding" → Go to APPLICATION FROZEN
 - If mentions "password", "login", "locked out" → Go to PASSWORD RESET or LOGIN ERROR procedures
+- If mentions "server issue" / "server problem" / "RDP issue" / "connection issue" / "remote desktop issue" WITHOUT specifying what's wrong → Ask Step 2 below
+- If mentions "slow", "lagging", "performance" → Go to SYSTEM SLOWNESS
+- If mentions "disconnecting", "connection drops", "keeps disconnecting" → Go to SERVER DISCONNECTION
+- If mentions "can't connect", "connection error", "gateway error" → Go to CONNECTION ERROR
 - If unclear → Ask clarifying question: "Is this related to connecting to the server, or is it about a specific application?"
+
+Step 2 (ONLY if user said vague "server issue"): "What exactly is happening with the server? For example, is it slow, disconnecting, or are you unable to connect?"
+[WAIT]
+
+Based on answer:
+- If slow/lagging/performance → Go to SYSTEM SLOWNESS
+- If disconnecting/connection drops → Go to SERVER DISCONNECTION
+- If can't connect/connection error → Go to CONNECTION ERROR
+- If login/password issue → Go to LOGIN ERROR DIAGNOSIS
+- If unclear → Escalate: "I'd like to connect you with our team who can investigate this. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: VAGUE APPLICATION ISSUE
