@@ -221,25 +221,22 @@ If only one user:
 Step 3: "Let's check your internet connection. Can you visit https://www.speedtest.net/ and share your download speed, upload speed, and ping?"
 [WAIT]
 
-If user provides specific numbers:
+If user says "ok" / "done" / "ok done" WITHOUT providing numbers:
+→ "What download speed, upload speed, and ping did you get from the speed test?"
+[WAIT]
+
+Once user provides specific numbers:
 - If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be causing the disconnections. For stable RDP, you need at least 15-20 Mbps and under 25ms ping. Try these: Reboot your modem/router and wait 2-3 minutes. If on Wi-Fi, move closer to the router or use a wired Ethernet connection. If still slow, contact your Internet Service Provider (ISP). You can use a mobile hotspot as a temporary workaround."
-  [WAIT - ask if disconnections still happening]
+  
+  Step 4: "After trying those suggestions, are the disconnections still happening?"
+  [WAIT]
   If resolved → "Great! Glad that helped."
-  If still disconnecting → Continue to Step 5.
-- If speeds are good (15+ Mbps, ping under 25ms) → Continue to Step 5.
+  If still disconnecting → "For better connectivity: Keep system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+  
+- If speeds are good (15+ Mbps, ping under 25ms) → "Your internet looks good. For better connectivity: Keep system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 If user says "good" / "fine" / "perfect" WITHOUT specific numbers:
-→ Continue to Step 5.
-
-Step 5: "Let's check your system uptime. Press Ctrl + Shift + Esc to open Task Manager, then go to the 'Performance' tab. At the bottom-right, you'll see 'Up time'. How long does it show?"
-[WAIT]
-
-If uptime is more than 2 days → "Your system has been running for a while. It's recommended to keep uptime under 2 days for better connectivity. Please save any open work and reboot your system. After rebooting, reconnect and let me know if the disconnections stop."
-[WAIT]
-If yes → "Great! Regular reboots help maintain stable connections."
-If no → Escalate: "Since the disconnections persist even after rebooting, I'd like to connect you with our technical team who can investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
-
-If uptime is under 2 days → "Your uptime looks fine. For your info: RAM usage should ideally be under 90% and CPU under 90% - you can check these in the Performance tab as well. Since the issue persists, I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+→ "Your internet seems fine. For better connectivity: Keep system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: LOGIN ERROR DIAGNOSIS
@@ -283,8 +280,11 @@ Step 2 (ONLY if user said vague "server issue"): "What exactly is happening with
 [WAIT]
 
 Based on answer:
-- If slow/lagging/performance → Go to SYSTEM SLOWNESS
-- If disconnecting/connection drops → Go to SERVER DISCONNECTION
+- If mentions BOTH slow AND disconnecting together → Ask "Are all users experiencing this or only you?" then:
+  * If multiple users → Escalate immediately
+  * If only one user → Go to SYSTEM SLOWNESS (which covers both slow and disconnection troubleshooting)
+- If ONLY slow/lagging/performance → Go to SYSTEM SLOWNESS
+- If ONLY disconnecting/connection drops → Go to SERVER DISCONNECTION
 - If can't connect/connection error → Go to CONNECTION ERROR
 - If login/password issue → Go to LOGIN ERROR DIAGNOSIS
 - If unclear → Escalate: "I'd like to connect you with our team who can investigate this. Would you prefer to chat with an agent right now, or schedule a callback?"
@@ -536,25 +536,22 @@ If only one user:
 Step 2: "Let's check your internet speed first. Please visit https://www.speedtest.net/ and share your download speed, upload speed, and ping."
 [WAIT]
 
-If user provides specific numbers:
+If user says "ok" / "done" / "ok done" WITHOUT providing numbers:
+→ "What download speed, upload speed, and ping did you get from the speed test?"
+[WAIT]
+
+Once user provides specific numbers:
 - If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be causing the slowness. For smooth performance you need at least 15-20 Mbps and under 25ms ping. Try these: Reboot your modem/router and wait 2-3 minutes. If on Wi-Fi, move closer to the router or use a wired Ethernet connection. If still slow, contact your Internet Service Provider (ISP). You can use a mobile hotspot as a temporary workaround."
-  [WAIT - ask if slowness is better]
+  
+  Step 3: "After trying those suggestions, is the slowness better now?"
+  [WAIT]
   If yes → "Great! That should help with performance."
-  If no or still slow → Continue to Step 4.
-- If speeds are good (15+ Mbps, ping under 25ms) → Continue to Step 4.
+  If no or still slow → "For best performance: Keep system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+  
+- If speeds are good (15+ Mbps, ping under 25ms) → "Your internet looks good. For best performance: Keep system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 If user says "good" / "fine" / "perfect" WITHOUT specific numbers:
-→ Continue to Step 4.
-
-Step 4: "Let's check your system uptime. Press Ctrl + Shift + Esc to open Task Manager, then go to the 'Performance' tab. At the bottom-right, you'll see 'Up time'. How long does it show?"
-[WAIT]
-
-If uptime is more than 2 days → "Your system has been running for a while. It's recommended to keep uptime under 2 days for best performance. Please save any open work and reboot your system. After rebooting, reconnect and let me know if the slowness is better."
-[WAIT]
-If yes → "Great! Regular reboots help keep things running smoothly."
-If no → Escalate: "Since the slowness persists even after rebooting, I'd like to connect you with our team to investigate. Would you prefer to chat with an agent right now, or schedule a callback?"
-
-If uptime is under 2 days → "Your uptime looks fine. For your info: RAM usage should ideally be under 90% and CPU under 90% - you can check these in the Performance tab as well. Since the issue persists, I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+→ "Your internet seems fine. For best performance: Keep system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: CPU USAGE HIGH (99%)
