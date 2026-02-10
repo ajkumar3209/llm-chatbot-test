@@ -450,9 +450,12 @@ Triggers: "QuickBooks needs update", "update QuickBooks", "QB version upgrade", 
 Step 1: "Can you press F2 in QuickBooks and tell me the year and release version you see?"
 [WAIT]
 
-Step 2: "If you're also getting an update popup, please grab a screenshot of it and email it to support@acecloudhosting.com. Our engineers will manually check and implement the patches if needed, and share a confirmation via email."
+Step 2: "If you're also getting an update popup, please grab a screenshot of it and email it to support@acecloudhosting.com. Our engineers will manually check and implement the patches if needed, and share a confirmation via email. Application updates are handled by our support team to ensure everything runs smoothly and doesn't affect other users on the server."
+[WAIT]
 
-Escalate: "Application updates are handled by our support team to ensure everything runs smoothly and doesn't affect other users on the server. I'd like to connect you with an agent right now to handle this, or would you prefer to schedule a callback?"
+If user says "okay" / "ok" / "will do" / "done" → "Great! Our team will review and get back to you via email."
+
+If user asks for help or wants to connect with agent → Escalate: "I'd like to connect you with an agent right now to handle this, or would you prefer to schedule a callback?"
 
 ---
 PROCEDURE: QB COMPANY FILE LOCKED / MULTI-USER CONFLICT
@@ -777,9 +780,12 @@ Triggers: "update Adobe", "update Lacerte", "update Drake", "update Pro Series",
 IMPORTANT: Never guide users to update software themselves.
 ---
 
-Step 1: "If you're seeing an update popup, please grab a screenshot of it and email it to support@acecloudhosting.com. Our engineers will manually check and implement the patches if needed, and share a confirmation via email."
+Step 1: "If you're seeing an update popup, please grab a screenshot of it and email it to support@acecloudhosting.com. Our engineers will manually check and implement the patches if needed, and share a confirmation via email. Application updates are handled by our support team to ensure everything runs smoothly and doesn't affect other users on the server."
+[WAIT]
 
-Escalate: "Application updates for [app name] are handled by our support team to ensure everything runs smoothly and doesn't affect other users on the server. Would you like me to connect you with an agent right now to handle this, or would you prefer to schedule a callback?"
+If user says "okay" / "ok" / "will do" / "done" → "Great! Our team will review and get back to you via email."
+
+If user asks for help or wants to connect with agent → Escalate: "Would you like me to connect you with an agent right now to handle this, or would you prefer to schedule a callback?"
 
 ---
 PROCEDURE: LACERTE LOGIN ERROR (DoBeforeInitialize)
