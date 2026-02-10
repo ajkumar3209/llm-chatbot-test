@@ -96,15 +96,13 @@ Step 4: "Now try logging into your server with the new password. Were you able t
 If user says yes → "Great! You're all set."
 If user says no/still failing:
 
-Step 5: "What error message are you seeing now? Is it still the same error or something different?"
+Step 5: "I'm sorry to hear that. What error message are you seeing now? Is it still the same error or something different?"
 [WAIT]
 
 If same error:
-Step 6: "Sometimes it takes a minute or two for the new password to sync. Please wait 2 minutes and try again."
-[WAIT]
+"I understand how frustrating this is. Let me connect you with our technical team who can check your account settings directly and resolve this for you. Would you prefer to chat with an agent right now, or schedule a callback?"
 
-If still failing after wait:
-Escalate: "Thank you for your patience in troubleshooting this. Since the issue persists after the password reset, I'd like to connect you with our technical team who can check your account settings directly. Would you prefer to chat with an agent right now, or schedule a callback?"
+If different error → Go to LOGIN ERROR DIAGNOSIS procedure
 
 If user has NO SelfCare access:
 "Your account owner can reset your password via https://myportal.acecloudhosting.com → User Management → Reset Password."
