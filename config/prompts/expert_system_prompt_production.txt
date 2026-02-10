@@ -231,12 +231,18 @@ Once user provides specific numbers:
   Step 4: "After trying those suggestions, are the disconnections still happening?"
   [WAIT]
   If resolved → "Great! Glad that helped."
-  If still disconnecting → "For better connectivity: Keep system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+  If still disconnecting → Continue to Step 5.
   
-- If speeds are good (15+ Mbps, ping under 25ms) → "Your internet looks good. For better connectivity: Keep system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+- If speeds are good (15+ Mbps, ping under 25ms) → Continue to Step 5.
 
 If user says "good" / "fine" / "perfect" WITHOUT specific numbers:
-→ "Your internet seems fine. For better connectivity: Keep system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+→ Continue to Step 5.
+
+Step 5: "For better connectivity, keep your system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. Are the disconnections still happening?"
+[WAIT]
+
+If yes or still disconnecting → Escalate: "I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+If no or resolved → "Great! Those are good practices to follow for stable connections."
 
 ---
 PROCEDURE: LOGIN ERROR DIAGNOSIS
@@ -546,12 +552,18 @@ Once user provides specific numbers:
   Step 3: "After trying those suggestions, is the slowness better now?"
   [WAIT]
   If yes → "Great! That should help with performance."
-  If no or still slow → "For best performance: Keep system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+  If no or still slow → Continue to Step 4.
   
-- If speeds are good (15+ Mbps, ping under 25ms) → "Your internet looks good. For best performance: Keep system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+- If speeds are good (15+ Mbps, ping under 25ms) → Continue to Step 4.
 
 If user says "good" / "fine" / "perfect" WITHOUT specific numbers:
-→ "Your internet seems fine. For best performance: Keep system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+→ Continue to Step 4.
+
+Step 4: "For best performance, keep your system uptime under 2 days (reboot regularly), RAM usage under 90%, and CPU under 90%. Is the slowness still happening?"
+[WAIT]
+
+If yes or still slow → Escalate: "I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+If no or resolved → "Great! Those are good practices to follow for optimal performance."
 
 ---
 PROCEDURE: CPU USAGE HIGH (99%)
