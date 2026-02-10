@@ -221,15 +221,15 @@ If only one user:
 Step 3: "Let's check your internet connection. Can you visit https://www.speedtest.net/ and share your download speed, upload speed, and ping?"
 [WAIT]
 
-If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be causing the disconnections. For stable RDP, you need at least 15-20 Mbps and under 25ms ping. Try these: Reboot your modem/router and wait 2-3 minutes. If on Wi-Fi, move closer to the router or use a wired Ethernet connection. If still slow, contact your Internet Service Provider (ISP). You can use a mobile hotspot as a temporary workaround."
+If user provides specific numbers:
+- If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be causing the disconnections. For stable RDP, you need at least 15-20 Mbps and under 25ms ping. Try these: Reboot your modem/router and wait 2-3 minutes. If on Wi-Fi, move closer to the router or use a wired Ethernet connection. If still slow, contact your Internet Service Provider (ISP). You can use a mobile hotspot as a temporary workaround."
+  [WAIT - ask if disconnections still happening]
+  If resolved → "Great! Glad that helped."
+  If still disconnecting → Continue to Step 5.
+- If speeds are good (15+ Mbps, ping under 25ms) → Continue to Step 5.
 
-Step 4: "After trying those suggestions, are the disconnections still happening?"
-[WAIT]
-
-If resolved → "Great! Glad that helped."
-If still disconnecting → Continue to Step 5.
-
-If speeds are fine → Continue to Step 5.
+If user says "good" / "fine" / "perfect" WITHOUT specific numbers:
+→ Continue to Step 5.
 
 Step 5: "Let's check your system uptime. Press Ctrl + Shift + Esc to open Task Manager, then go to the 'Performance' tab. At the bottom-right, you'll see 'Up time'. How long does it show?"
 [WAIT]
@@ -536,15 +536,15 @@ If only one user:
 Step 2: "Let's check your internet speed first. Please visit https://www.speedtest.net/ and share your download speed, upload speed, and ping."
 [WAIT]
 
-If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be causing the slowness. For smooth performance you need at least 15-20 Mbps and under 25ms ping. Try these: Reboot your modem/router and wait 2-3 minutes. If on Wi-Fi, move closer to the router or use a wired Ethernet connection. If still slow, contact your Internet Service Provider (ISP). You can use a mobile hotspot as a temporary workaround."
+If user provides specific numbers:
+- If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be causing the slowness. For smooth performance you need at least 15-20 Mbps and under 25ms ping. Try these: Reboot your modem/router and wait 2-3 minutes. If on Wi-Fi, move closer to the router or use a wired Ethernet connection. If still slow, contact your Internet Service Provider (ISP). You can use a mobile hotspot as a temporary workaround."
+  [WAIT - ask if slowness is better]
+  If yes → "Great! That should help with performance."
+  If no or still slow → Continue to Step 4.
+- If speeds are good (15+ Mbps, ping under 25ms) → Continue to Step 4.
 
-Step 3: "After trying those suggestions, is the slowness better now?"
-[WAIT]
-
-If yes → "Great! That should help with performance."
-If no or still slow → Continue to Step 4.
-
-If speeds are fine → Continue to Step 4.
+If user says "good" / "fine" / "perfect" WITHOUT specific numbers:
+→ Continue to Step 4.
 
 Step 4: "Let's check your system uptime. Press Ctrl + Shift + Esc to open Task Manager, then go to the 'Performance' tab. At the bottom-right, you'll see 'Up time'. How long does it show?"
 [WAIT]
