@@ -54,6 +54,14 @@ If yes → "Click on it and follow the steps to reset your password within the s
 If no → Escalate: "I'd like to connect you with our team who can help. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
+PROCEDURE: QB COMPANY FILE PASSWORD ISSUE
+Triggers: "company file password", "qb password", "quickbooks password", "company file password invalid", "company file password incorrect", "password for company file"
+IMPORTANT: This is for QuickBooks company file passwords (set within QB by users), NOT Windows/server login passwords.
+---
+
+Escalate immediately: "The QuickBooks company file password is set by the QuickBooks Administrator or file owner within QuickBooks itself, not by Ace Cloud Hosting. I'd like to connect you with our team who can assist with this. Would you prefer to chat with an agent right now, or schedule a callback?"
+
+---
 PROCEDURE: PASSWORD RESET (SelfCare)
 Triggers: "logon attempt failed", "authentication failed", "incorrect password", "password not working", "reset password", "can't login" + password-related error
 ---
@@ -95,11 +103,11 @@ PROCEDURE: MY PORTAL - MANAGE USERS
 Triggers: "add user", "remove user", "disable user", "manage users", "user management", "add new user", "delete user", "my portal users", "manage account users"
 ---
 
-Pre-check: "This is an account owner or POC function. My Portal also handles billing related info. Are you the account owner or Primary Point of Contact (POC) for this account?"
+Pre-check: "Registered Account Owners have the ability to add/disable users via MyPortal. Are you the account owner for this account?"
 [WAIT]
 
 If yes → continue with steps below
-If no → Escalate: "You'll need to contact your account owner or POC to manage users and billing. I'd like to connect you with our team who can help. Would you prefer to chat with an agent right now, or schedule a callback?"
+If no → "Since only registered account owners can manage users through MyPortal, please send your request via email to support@acecloudhosting.com from your registered email address. Our team will assist you with the user changes. Is there anything else I can help with?"
 
 Step 1: "Log in to https://myportal.acecloudhosting.com with your account owner or POC credentials."
 [WAIT]
@@ -213,15 +221,25 @@ If only one user:
 Step 3: "Let's check your internet connection. Can you visit https://www.speedtest.net/ and share your download speed, upload speed, and ping?"
 [WAIT]
 
-If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be causing the disconnections. For stable RDP, you need at least 15-20 Mbps and under 25ms ping. Please check with your ISP."
+If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be causing the disconnections. For stable RDP, you need at least 15-20 Mbps and under 25ms ping. Try these: Reboot your modem/router and wait 2-3 minutes. If on Wi-Fi, move closer to the router or use a wired Ethernet connection. If still slow, contact your Internet Service Provider (ISP). You can use a mobile hotspot as a temporary workaround."
 
-If speeds are fine:
-
-Step 3: "Try restarting your local router or modem. Unplug it for 30 seconds, plug it back in, wait for it to fully restart, then try connecting again. Did that help?"
+Step 4: "After trying those suggestions, are the disconnections still happening?"
 [WAIT]
 
-If yes → "Great! Glad that resolved it."
-If no → Escalate: "Thank you for trying those steps. Since the disconnection persists with good internet, I'd like to connect you with our technical team who can investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+If resolved → "Great! Glad that helped."
+If still disconnecting → Continue to Step 5.
+
+If speeds are fine → Continue to Step 5.
+
+Step 5: "Let's check your system uptime. Press Ctrl + Shift + Esc to open Task Manager, then go to the 'Performance' tab. At the bottom-right, you'll see 'Up time'. How long does it show?"
+[WAIT]
+
+If uptime is more than 2 days → "Your system has been running for a while. It's recommended to keep uptime under 2 days for better connectivity. Please save any open work and reboot your system. After rebooting, reconnect and let me know if the disconnections stop."
+[WAIT]
+If yes → "Great! Regular reboots help maintain stable connections."
+If no → Escalate: "Since the disconnections persist even after rebooting, I'd like to connect you with our technical team who can investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
+
+If uptime is under 2 days → "Your uptime looks fine. For your info: RAM usage should ideally be under 90% and CPU under 90% - you can check these in the Performance tab as well. Since the issue persists, I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: LOGIN ERROR DIAGNOSIS
@@ -407,11 +425,13 @@ Escalate: "Since the export feature is giving an error, I'd like to connect you 
 
 ---
 PROCEDURE: QB UPDATE / VERSION UPGRADE
-Triggers: "QuickBooks needs update", "update QuickBooks", "QB version upgrade"
+Triggers: "QuickBooks needs update", "update QuickBooks", "QB version upgrade", "QB update popup"
 ---
 
 Step 1: "Can you press F2 in QuickBooks and tell me the year and release version you see?"
 [WAIT]
+
+Step 2: "If you're also getting an update popup, please grab a screenshot of it and email it to support@acecloudhosting.com. Our engineers will manually check and implement the patches if needed, and share a confirmation via email."
 
 Escalate: "Application updates are handled by our support team to ensure everything runs smoothly and doesn't affect other users on the server. I'd like to connect you with an agent right now to handle this, or would you prefer to schedule a callback?"
 
@@ -503,15 +523,25 @@ If only one user:
 Step 2: "Let's check your internet speed first. Please visit https://www.speedtest.net/ and share your download speed, upload speed, and ping."
 [WAIT]
 
-If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be the cause. For smooth performance you need at least 15-20 Mbps and under 25ms ping. Try these: If on Wi-Fi, move closer to the router or use a wired connection. You can also try restarting your router. If it's still slow, please contact your ISP. In the meantime, you can use a mobile hotspot as a temporary workaround."
+If speeds below 15 Mbps or ping above 25ms → "Your internet speed may be causing the slowness. For smooth performance you need at least 15-20 Mbps and under 25ms ping. Try these: Reboot your modem/router and wait 2-3 minutes. If on Wi-Fi, move closer to the router or use a wired Ethernet connection. If still slow, contact your Internet Service Provider (ISP). You can use a mobile hotspot as a temporary workaround."
 
 Step 3: "After trying those suggestions, is the slowness better now?"
 [WAIT]
 
 If yes → "Great! That should help with performance."
-If no or still slow → Escalate: "Since the slowness persists even with good internet troubleshooting, I'd like to connect you with our team to investigate. Would you prefer to chat with an agent right now, or schedule a callback?"
+If no or still slow → Continue to Step 4.
 
-If speeds are fine → Escalate: "Your internet looks good, so this may be a server-side issue. I'd like to connect you with our team who can investigate. Would you prefer to chat with an agent right now, or schedule a callback?"
+If speeds are fine → Continue to Step 4.
+
+Step 4: "Let's check your system uptime. Press Ctrl + Shift + Esc to open Task Manager, then go to the 'Performance' tab. At the bottom-right, you'll see 'Up time'. How long does it show?"
+[WAIT]
+
+If uptime is more than 2 days → "Your system has been running for a while. It's recommended to keep uptime under 2 days for best performance. Please save any open work and reboot your system. After rebooting, reconnect and let me know if the slowness is better."
+[WAIT]
+If yes → "Great! Regular reboots help keep things running smoothly."
+If no → Escalate: "Since the slowness persists even after rebooting, I'd like to connect you with our team to investigate. Would you prefer to chat with an agent right now, or schedule a callback?"
+
+If uptime is under 2 days → "Your uptime looks fine. For your info: RAM usage should ideally be under 90% and CPU under 90% - you can check these in the Performance tab as well. Since the issue persists, I'd like to connect you with our team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: CPU USAGE HIGH (99%)
@@ -547,6 +577,31 @@ If still low → "You can also delete unnecessary files from your Desktop, Downl
 If still not enough space after cleanup → Escalate: "Since disk space is still low after cleanup, I'd like to connect you with our team who can help. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
+PROCEDURE: INCREASE SERVER RAM
+Triggers: "increase RAM", "need more RAM", "add RAM", "upgrade RAM", "server RAM", "more memory", "RAM upgrade"
+---
+
+Step 1: "To increase your server RAM, please email support@acecloudhosting.com from your registered email address with the amount of RAM you need. I'd recommend contacting our support team first so they can review your current usage and suggest the best option for you. Would you like me to connect you with an agent to discuss this, or would you prefer to send the email?"
+[WAIT]
+
+If connect with agent → Escalate: "I'd like to connect you with our team who can review your current RAM usage and recommend the right upgrade. Would you prefer to chat with an agent right now, or schedule a callback?"
+If email → "Great! Just send an email to support@acecloudhosting.com with your RAM requirement and our team will get back to you."
+
+---
+PROCEDURE: APPLICATION INSTALLATION
+Triggers: "install application", "install software", "install QuickBooks", "install Sage", "install ATX", "install Drake", "install Lacerte", "install ProSeries", "need app installed", "software installation", "new application", "install program"
+IMPORTANT: Users should NOT install applications themselves on a shared server.
+---
+
+Step 1: "Application installations on the server are handled by our support team to ensure compatibility and avoid affecting other users. Please email support@acecloudhosting.com from your registered email address with the following details: the application name, version or year, serial number (if required), and the setup/installer file (if you have one). Our team will install the application and confirm via email. Installation usually takes 1-2 hours."
+
+"Would you like me to connect you with an agent to get this started, or will you send the email?"
+[WAIT]
+
+If connect with agent → Escalate: "I'd like to connect you with our team to handle the installation for you. Would you prefer to chat with an agent right now, or schedule a callback?"
+If email → "Great! Just send the details to support@acecloudhosting.com and our team will take care of it."
+
+---
 PROCEDURE: PRINTING ISSUES
 Triggers: "can't print", "printer not working", "printer not showing", "print error", "can't print checks"
 ---
@@ -557,7 +612,7 @@ Step 1: "What exactly happens when you try to print? Do you see an error message
 Step 2: "Are you printing from QuickBooks or another program?"
 [WAIT]
 
-Step 3: "Is this a printer connected to your local computer with a USB cable, or a network printer?"
+Step 3: "Is the printer connected to your system via USB cable or network/shared printer?"
 [WAIT]
 
 If printer missing/not found:
@@ -576,7 +631,10 @@ Step 8: "Go to the 'General' tab and click 'Save'."
 Step 9: "Click 'Connect' to reconnect. After logging in, check if your printer appears now."
 [WAIT]
 If yes → "Great! You're all set."
-If no → Escalate.
+If no → "If your printer still doesn't appear after enabling redirection, you can try using UniPrint. Install the UniPrint client on your local desktop, then add and select the UniPrint printer on the server. Would you like me to connect you with our team to help set up UniPrint?"
+[WAIT]
+If yes → Escalate: "I'd like to connect you with our team who can help set up UniPrint for you. Would you prefer to chat with an agent right now, or schedule a callback?"
+If no → "No problem! If you need help later, feel free to reach out."
 
 If Mac:
 Step 5: "Open Microsoft Remote Desktop on your Mac."
@@ -588,7 +646,10 @@ Step 7: "Go to the 'Devices & Audio' tab and check the 'Printers' box."
 Step 8: "Click 'Save', then reconnect. After logging in, check if your printer appears."
 [WAIT]
 If yes → "Great! You're all set."
-If no → Escalate.
+If no → "If your printer still doesn't appear after enabling redirection, you can try using UniPrint. Install the UniPrint client on your local desktop, then add and select the UniPrint printer on the server. Would you like me to connect you with our team to help set up UniPrint?"
+[WAIT]
+If yes → Escalate: "I'd like to connect you with our team who can help set up UniPrint for you. Would you prefer to chat with an agent right now, or schedule a callback?"
+If no → "No problem! If you need help later, feel free to reach out."
 
 For other print issues → Escalate after gathering info.
 
@@ -601,20 +662,37 @@ IMPORTANT: If user explicitly asks to "setup" or "help setup", escalate immediat
 IF USER EXPLICITLY ASKS FOR SETUP ("can you setup", "help me setup", "setup uniprint"):
 → Escalate immediately (do NOT ask Step 1)
 
-Escalate: "I'd like to connect you with our technical team who can help you set up UniPrint. UniPrint requires configuration on both your local computer and the server, so our team will handle this for you. Would you prefer to chat with an agent right now, or schedule a callback?"
+Escalate: "For printing, install the UniPrint client on your local desktop, then add and select the UniPrint printer on the server. I'd like to connect you with our technical team who can help you complete the setup. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 IF USER JUST ASKS WHAT IT IS OR REPORTS IT'S NOT WORKING:
 Step 1: "Are you trying to set up UniPrint for the first time, or is it already installed but not working?"
 [WAIT]
 
 If first time setup:
-Escalate: "I'd like to connect you with our technical team who can help you set up UniPrint. UniPrint requires configuration on both your local computer and the server. Would you prefer to chat with an agent right now, or schedule a callback?"
+Escalate: "For printing, you'll need to install the UniPrint client on your local desktop, then add and select the UniPrint printer on the server. I'd like to connect you with our technical team who can help with the setup. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 If already installed but not working:
 Step 2: "Is UniPrint showing any error messages, or is it just not connecting to the server?"
 [WAIT]
 
 Based on answer → Escalate: "I'd like to connect you with our team who can investigate your UniPrint setup. Would you prefer to chat with an agent right now, or schedule a callback?"
+
+---
+PROCEDURE: SCANNER SETUP / TSSCAN
+Triggers: "scanner", "scanner setup", "TSScan", "add scanner", "scanner not working", "scan to server", "setup scanner"
+---
+
+Step 1: "For scanner setup on the server, TSScan needs to be installed on both your local PC and the server. Do you already have a TSScan license?"
+[WAIT]
+
+If yes (has TSScan license):
+Step 2: "Please download TSScan and install it on the server. Then email support@acecloudhosting.com from your registered email to complete the registration. Our team will finish the setup for you."
+
+If no (no TSScan license):
+Step 2: "Please email support@acecloudhosting.com from your registered email address to procure and register a TSScan license. Our team will handle the procurement, installation, and registration for you."
+
+If scanner already installed but not working:
+Escalate: "I'd like to connect you with our team who can investigate your scanner/TSScan setup. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: RDP SCREEN RESOLUTION
@@ -673,9 +751,11 @@ If no → Escalate.
 
 ---
 PROCEDURE: APPLICATION UPDATE (Any Software)
-Triggers: "update Adobe", "update Lacerte", "update Drake", "update Pro Series", "update CFS", "update 1099", "software update", "application update", "need to update"
+Triggers: "update Adobe", "update Lacerte", "update Drake", "update Pro Series", "update CFS", "update 1099", "software update", "application update", "need to update", "update popup"
 IMPORTANT: Never guide users to update software themselves.
 ---
+
+Step 1: "If you're seeing an update popup, please grab a screenshot of it and email it to support@acecloudhosting.com. Our engineers will manually check and implement the patches if needed, and share a confirmation via email."
 
 Escalate: "Application updates for [app name] are handled by our support team to ensure everything runs smoothly and doesn't affect other users on the server. Would you like me to connect you with an agent right now to handle this, or would you prefer to schedule a callback?"
 

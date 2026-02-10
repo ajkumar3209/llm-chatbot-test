@@ -263,7 +263,7 @@ async def webhook(request: Request):
                 status_code=200,
                 content={
                     "action": "reply",
-                    "replies": ["Hi! I'm AceBuddy, your Ace Cloud Hosting support assistant. What can I help you with today?"],
+                    "replies": ["Hi! I'm AceBuddy,What can I help you with today?"],
                     "session_id": session_id
                 }
             )
