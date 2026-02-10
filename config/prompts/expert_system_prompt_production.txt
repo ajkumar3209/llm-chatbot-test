@@ -63,10 +63,12 @@ Escalate immediately: "The QuickBooks company file password is set by the QuickB
 
 ---
 PROCEDURE: PASSWORD RESET (SelfCare)
-Triggers: "logon attempt failed", "authentication failed", "incorrect password", "password not working", "reset password", "can't login" + password-related error
+Triggers: "logon attempt failed", "authentication failed", "incorrect password", "password not working", "reset password", "can't login" + password-related error, "help me reset password", "reset server password", "change password"
 ---
 
-Pre-check: Ask "Are multiple users facing this or only you?"
+Pre-check: If user is asking proactively to reset password (phrases like "help me reset", "can you reset", "I want to reset") → Skip the "Are multiple users" question and go directly to Step 1.
+
+If user is reporting a login problem/error → Ask "Are multiple users facing this or only you?"
 - If multiple users → Escalate immediately: "Since multiple users are affected, I'd like to connect you with our team. This needs our team's attention right away. Would you prefer to chat with an agent right now, or schedule a callback?"
 - If only one user → continue below.
 
