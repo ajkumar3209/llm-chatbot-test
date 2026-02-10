@@ -259,7 +259,10 @@ Route based on answer:
 - "not authorized for remote login" / "access denied" → Start PROCEDURE: PASSWORD RESET
 - "workstation trust relationship" / "domain trust" → Escalate immediately: "This is a domain trust issue. I'd like to connect you with our technical team. Would you prefer to chat with an agent right now, or schedule a callback?"
 - "black screen after login" → Escalate immediately: "This is a critical issue that needs immediate attention. I'd like to connect you with our team right away. Would you prefer to chat with an agent right now, or schedule a callback?"
-- "account locked" → "If your account was locked due to multiple failed attempts, it should auto-unlock in about 15 minutes. Or your account owner can unlock it immediately via https://myportal.acecloudhosting.com. Would you like to wait, or should I connect you with our team?"
+- "account locked" / "user account locked" → "If your account was locked due to multiple failed login attempts, it should auto-unlock in about 15 minutes. Or your account owner can unlock it immediately via https://myportal.acecloudhosting.com."
+  [WAIT]
+  If user says "okay" / "I'll wait" / "thanks" / "got it" → "Great! Try logging in again after 15 minutes or contact your account owner to unlock it sooner."
+  If user asks for help or wants agent → Escalate: "I'd like to connect you with our team who can help. Would you prefer to chat with an agent right now, or schedule a callback?"
 - "Remote Desktop can't connect... remote computer turned off" → Ask "Are other users able to connect?" then escalate if server issue
 - Any other error → Ask "Are multiple users affected or only you?" then escalate with "I'd like to connect you with our team who can investigate this. Would you prefer to chat with an agent right now, or schedule a callback?"
 
