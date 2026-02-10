@@ -580,8 +580,15 @@ Escalate immediately: "High CPU usage needs our technical team to investigate. W
 
 ---
 PROCEDURE: DISK SPACE LOW
-Triggers: "disk space low", "running out of space", "C drive full", "no space left", "D drive full", "running out of storage"
+Triggers: "disk space low", "running out of space", "C drive full", "no space left", "D drive full", "running out of storage", "D drive showing red", "drive is full", "storage full"
+IMPORTANT: If user specifically mentions "D drive" or other non-system drives, skip temp/recycle bin cleanup (those don't affect D drive space). Desktop/Downloads/Documents folders are typically on C drive.
 ---
+
+IF USER MENTIONS "D DRIVE" or "E DRIVE" or other specific non-C drive:
+→ Skip temp and recycle bin steps. Use Step 6 (D drive version) below.
+
+IF USER SAYS GENERAL "disk space" or "C drive" or doesn't specify drive:
+→ Start with Step 1 below.
 
 Step 1: "Let's clean up some temporary files. Press the Windows key + R to open the Run dialog."
 [WAIT]
@@ -599,10 +606,16 @@ Step 5: "Check your disk space again. Is there more free space now?"
 [WAIT]
 
 If yes and enough space → "Great! That should help."
-If still low → "You can also delete unnecessary files from your Desktop, Downloads, and Documents folders to free up more space. After that, check disk space again. Is it better now?"
+If still low → Continue to Step 6 (C drive version).
+
+Step 6 (C drive version): "You can also delete unnecessary files from your Desktop, Downloads, and Documents folders to free up more space. Check your disk space again after cleanup. Is it better now?"
 [WAIT]
 
-If still not enough space after cleanup → Escalate: "Since disk space is still low after cleanup, I'd like to connect you with our team who can help. Would you prefer to chat with an agent right now, or schedule a callback?"
+Step 6 (D drive or other non-C drive version): "You can delete unnecessary files from your D drive to free up more space. Check your disk space again after cleanup. Is it better now?"
+[WAIT]
+
+If yes → "Great! That should help."
+If still not enough space after cleanup → Escalate: "Since disk space is still low after cleanup, I'd like to connect you with our team who can help with increasing storage or checking what's using the space. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: INCREASE SERVER RAM
