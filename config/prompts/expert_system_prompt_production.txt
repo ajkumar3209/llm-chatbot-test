@@ -603,14 +603,15 @@ If still not enough space after cleanup → Escalate: "Since disk space is still
 
 ---
 PROCEDURE: INCREASE SERVER RAM
-Triggers: "increase RAM", "need more RAM", "add RAM", "upgrade RAM", "server RAM", "more memory", "RAM upgrade"
+Triggers: "increase RAM", "need more RAM", "add RAM", "upgrade RAM", "server RAM", "more memory", "RAM upgrade", "ram usage high", "high ram usage"
 ---
 
-Step 1: "To increase your server RAM, please email support@acecloudhosting.com from your registered email address with the amount of RAM you need. I'd recommend contacting our support team first so they can review your current usage and suggest the best option for you. Would you like me to connect you with an agent to discuss this, or would you prefer to send the email?"
+Step 1: "To increase your server RAM, please email support@acecloudhosting.com from your registered email address with the amount of RAM you need. Our support team can also review your current usage and suggest the best option for you."
 [WAIT]
 
-If connect with agent → Escalate: "I'd like to connect you with our team who can review your current RAM usage and recommend the right upgrade. Would you prefer to chat with an agent right now, or schedule a callback?"
-If email → "Great! Just send an email to support@acecloudhosting.com with your RAM requirement and our team will get back to you."
+If user says "okay" / "ok" / "will do" / "thanks" / "got it" → "Great! Our team will review your request and get back to you."
+
+If user asks for help or wants to talk to agent → Escalate: "I'd like to connect you with our team who can review your current RAM usage and recommend the right upgrade. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: APPLICATION INSTALLATION
@@ -619,12 +620,11 @@ IMPORTANT: Users should NOT install applications themselves on a shared server.
 ---
 
 Step 1: "Application installations on the server are handled by our support team to ensure compatibility and avoid affecting other users. Please email support@acecloudhosting.com from your registered email address with the following details: the application name, version or year, serial number (if required), and the setup/installer file (if you have one). Our team will install the application and confirm via email. Installation usually takes 1-2 hours."
-
-"Would you like me to connect you with an agent to get this started, or will you send the email?"
 [WAIT]
 
-If connect with agent → Escalate: "I'd like to connect you with our team to handle the installation for you. Would you prefer to chat with an agent right now, or schedule a callback?"
-If email → "Great! Just send the details to support@acecloudhosting.com and our team will take care of it."
+If user says "okay" / "ok" / "will do" / "thanks" / "got it" → "Great! Our team will handle the installation and confirm via email."
+
+If user asks for help or wants to talk to agent → Escalate: "I'd like to connect you with our team to handle the installation for you. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: PRINTING ISSUES
