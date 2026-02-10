@@ -757,34 +757,75 @@ If no → Escalate: "Since the resolution isn't applying to the remote session, 
 
 ---
 PROCEDURE: DUAL MONITOR / MULTI-MONITOR SETUP
-Triggers: "dual monitor", "multi monitor", "two screens", "multiple monitors", "second monitor"
+Triggers: "dual monitor", "multi monitor", "two screens", "multiple monitors", "second monitor", "use all monitors", "single monitor", "one monitor", "switch to single monitor", "disable multi monitor"
+IMPORTANT: Check if user wants to ENABLE multi-monitor or DISABLE it (switch to single monitor).
 ---
 
-Step 1: "Are you using a Mac or Windows computer?"
+Step 1: "Are you trying to use multiple monitors for RDP, or switch to a single monitor?"
+[WAIT]
+
+If user wants MULTIPLE monitors → Continue with Step 2 below.
+If user wants SINGLE monitor → Go to SINGLE MONITOR steps below.
+
+=== FOR MULTIPLE MONITORS ===
+
+Step 2: "Are you using a Mac or Windows computer?"
 [WAIT]
 
 If Windows:
-Step 2: "Right-click on your RDP connection icon and select 'Edit."
+Step 3: "Right-click on your RDP connection icon and select 'Edit'."
 [WAIT]
-Step 3: "Click the 'Show Options' button at the bottom left."
+Step 4: "Click the 'Show Options' button at the bottom left."
 [WAIT]
-Step 4: "Go to the 'Display' tab."
+Step 5: "Go to the 'Display' tab."
 [WAIT]
-Step 5: "Check the box that says 'Use all my monitors for the remote session'."
+Step 6: "Check the box that says 'Use all my monitors for the remote session'."
 [WAIT]
-Step 6: "Go back to the 'General' tab and click 'Save', then click 'Connect'."
+Step 7: "Go back to the 'General' tab and click 'Save', then click 'Connect'."
 [WAIT]
-Step 7: "Your remote session should now span all your monitors. Is it working?"
+Step 8: "Your remote session should now span all your monitors. Is it working?"
 [WAIT]
 
 If Mac:
-Step 2: "Open Microsoft Remote Desktop on your Mac."
+Step 3: "Open Microsoft Remote Desktop on your Mac."
 [WAIT]
-Step 3: "Right-click your saved connection and select 'Edit'."
+Step 4: "Right-click your saved connection and select 'Edit'."
 [WAIT]
-Step 4: "Go to the 'Display' section and check 'Use all monitors'."
+Step 5: "Go to the 'Display' section and check 'Use all monitors'."
 [WAIT]
-Step 5: "Click 'Save', then connect. Is it spanning both monitors now?"
+Step 6: "Click 'Save', then connect. Is it spanning both monitors now?"
+[WAIT]
+
+If yes → "Perfect! You're all set."
+If no → Escalate.
+
+=== FOR SINGLE MONITOR ===
+
+Step 2: "Are you using a Mac or Windows computer?"
+[WAIT]
+
+If Windows:
+Step 3: "Right-click on your RDP connection icon and select 'Edit'."
+[WAIT]
+Step 4: "Click the 'Show Options' button at the bottom left."
+[WAIT]
+Step 5: "Go to the 'Display' tab."
+[WAIT]
+Step 6: "UNCHECK the box that says 'Use all my monitors for the remote session'."
+[WAIT]
+Step 7: "Go back to the 'General' tab and click 'Save', then click 'Connect'."
+[WAIT]
+Step 8: "Your remote session should now use only one monitor. Is it working?"
+[WAIT]
+
+If Mac:
+Step 3: "Open Microsoft Remote Desktop on your Mac."
+[WAIT]
+Step 4: "Right-click your saved connection and select 'Edit'."
+[WAIT]
+Step 5: "Go to the 'Display' section and UNCHECK 'Use all monitors'."
+[WAIT]
+Step 6: "Click 'Save', then connect. Is it using a single monitor now?"
 [WAIT]
 
 If yes → "Perfect! You're all set."
