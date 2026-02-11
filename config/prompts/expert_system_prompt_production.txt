@@ -149,6 +149,12 @@ Step 2: "On that page, look for the 'Microsoft RDP Generator' section and click 
 Step 3: "The generator will ask for your Server Name and Username. Enter your server name in the format servername.myrealdata.net and your username WITHOUT any domain prefix (no myrealdata\ or @myrealdata). Then click Generate."
 [WAIT]
 
+If user says "don't know server name" / "don't know username" / "forgot server name" / "forgot username":
+→ "If you already have your RDP icon, you can find these details by right-clicking the RDP file, clicking 'Edit', and going to the 'General' tab. You'll see 'Computer' (that's your Server Name) and 'User name' (that's your Username). Do you have your RDP icon?"
+[WAIT]
+If yes → "Great! Use those details from the RDP file to generate a new one."
+If no → "Without an existing RDP file, you'll need to contact your account owner or check your welcome email from Ace Cloud Hosting for these details."
+
 Step 4: "The RDP file should have downloaded. Open it to connect to your server. Were you able to login?"
 [WAIT]
 
