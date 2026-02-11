@@ -358,7 +358,7 @@ Based on answer:
 
 ---
 PROCEDURE: APPLICATION FROZEN
-Triggers: "frozen", "frozn", "stuck", "not responding", "application stuck", "software not responding", "program frozen", "app stuck", "QB frozen", "QuickBooks frozen", "QB stuck", "qb is freeze", "qb frozen", "qb stuck", "qb is not responding", "quickbooks is not responding", "quickbooks stuck", "quickbooks frozen", "excel frozen", "excel stuck", "excel is not responding", "excel is frozen", "outlook frozen", "outlook stuck", "outlook is not responding", "outlook is frozen", "adobe frozen", "adobe stuck", "adobe is not responding", "adobe is frozen", "lacerte frozen", "lacerte stuck", "lacerte is not responding", "word frozen", "word stuck", "word is not responding", "chrome frozen", "chrome stuck", "chrome is not responding", "sage frozen", "sage stuck", "sage is not responding", "drake frozen", "drake stuck", "drake is not responding"
+Triggers: "frozen", "frozn", "stuck", "not responding", "application stuck", "software not responding", "program frozen", "app stuck", "QB frozen", "QuickBooks frozen", "QB stuck", "qb is freeze", "qb frozen", "qb stuck", "qb is not responding", "quickbooks is not responding", "quickbooks stuck", "quickbooks frozen", "excel frozen", "excel stuck", "excel is not responding", "excel is frozen", "outlook frozen", "outlook stuck", "outlook is not responding", "outlook is frozen", "adobe frozen", "adobe stuck", "adobe is not responding", "adobe is frozen", "lacerte frozen", "lacerte stuck", "lacerte is not responding", "word frozen", "word stuck", "word is not responding", "chrome frozen", "chrome stuck", "chrome is not responding", "sage frozen", "sage stuck", "sage is not responding", "drake frozen", "drake stuck", "drake is not responding", "tax act frozen", "tax act stuck", "tax act is not responding", "taxact frozen", "taxact stuck", "ultra tax frozen", "ultra tax stuck", "ultra tax is not responding", "ultratax frozen", "ultratax stuck", "proseries frozen", "proseries stuck", "proseries is not responding", "pro series frozen", "pro series stuck", "atx frozen", "atx stuck", "atx is not responding", "cch frozen", "cch stuck", "cch is not responding"
 ---
 
 FOR QUICKBOOKS (user said qb, QB, quickbooks, QuickBooks):
@@ -372,23 +372,8 @@ If yes → "Great! You're all set."
 If no or no QB Reset icon → "Let's use Task Manager. Right-click on the taskbar and select 'Task Manager'."
 Then continue with TASK MANAGER METHOD below.
 
-FOR EXCEL (user said excel, Excel):
-"Let's force-close Excel using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
-[WAIT]
-Then continue with TASK MANAGER METHOD below.
-
-FOR OUTLOOK (user said outlook, Outlook):
-"Let's force-close Outlook using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
-[WAIT]
-Then continue with TASK MANAGER METHOD below.
-
-FOR ADOBE (user said adobe, Adobe):
-"Let's force-close Adobe using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
-[WAIT]
-Then continue with TASK MANAGER METHOD below.
-
-FOR ANY OTHER APP (lacerte, sage, drake, word, chrome, etc.):
-"Let's force-close [app name] using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
+FOR ANY OTHER APP (excel, outlook, adobe, lacerte, sage, drake, word, chrome, tax act, ultra tax, proseries, atx, cch, OR ANY app name user mentions):
+"Let's force-close [use the app name user mentioned] using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
 [WAIT]
 Then continue with TASK MANAGER METHOD below.
 
