@@ -135,6 +135,24 @@ If user confirms action completed → "Great! Your user has been updated."
 If user needs more help → Escalate: "I'd like to connect you with our team for further assistance. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
+PROCEDURE: FIND SERVER NAME / USERNAME
+Triggers: "find server name", "what is my server name", "what is my username", "find username", "server name and username", "don't know server name", "don't know username", "forgot server name", "forgot username", "how to find server name", "how to find username", "what is servername", "what is username", "help me find server name", "help me find username", "where to find server name", "where to find username"
+---
+
+Step 1: "Do you have your RDP icon on your desktop or in your files?"
+[WAIT]
+
+If yes → "Right-click on your RDP file and select 'Edit'. Go to the 'General' tab — you'll see 'Computer' (that's your Server Name) and 'User name' (that's your Username). Were you able to find them?"
+[WAIT]
+If yes → "Great! You're all set."
+If no → Escalate: "Let me connect you with our team who can help you locate these details. Would you prefer to chat with an agent right now, or schedule a callback?"
+
+If no → "Your account owner can provide you with your server name and username. Please contact your account owner for these details. Would you like any further help?"
+[WAIT]
+If yes / needs help → Escalate: "Let me connect you with our team who can look up your details. Would you prefer to chat with an agent right now, or schedule a callback?"
+If no / "got it" / "thanks" → "You're welcome!"
+
+---
 PROCEDURE: RDP FILE GENERATION (New User Setup)
 Triggers: "rdp file missing", "lost rdp file", "generate rdp", "new user setup", "need rdp file", "first time setup", "rdp setup", "setup rdp", "rdp file for user", "rdp setup for user"
 IMPORTANT: This is for generating/downloading RDP files, not for display/monitor settings.
