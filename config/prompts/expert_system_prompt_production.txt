@@ -358,56 +358,55 @@ Based on answer:
 
 ---
 PROCEDURE: APPLICATION FROZEN
-Triggers: "frozen", "frozn", "stuck", "not responding", "application stuck", "software not responding", "program frozen", "app stuck", "QB frozen", "QuickBooks frozen", "QB stuck", "qb is freeze", "qb frozen", "qb stuck", "excel frozen", "outlook frozen", "excel stuck"
+Triggers: "frozen", "frozn", "stuck", "not responding", "application stuck", "software not responding", "program frozen", "app stuck", "QB frozen", "QuickBooks frozen", "QB stuck", "qb is freeze", "qb frozen", "qb stuck", "excel frozen", "outlook frozen", "excel stuck", "adobe is not responding", "adobe is frozen", "adobe stuck"
 IMPORTANT: Only use this if user explicitly says frozen/stuck/not responding. Do NOT use for:
 - "won't open", "won't load", "won't start", "can't open" (these are DIFFERENT issues - use VAGUE APPLICATION ISSUE instead)
 - vague "not working" or general "issue" mentions
 - error messages or crashes
 ---
 
-ROUTING - Check user's original message FIRST before any steps:
+CRITICAL ROUTING - DO THIS FIRST:
+Before asking ANY questions, check if user's message contains an application name:
 
-1. If user's message contains "QB" OR "qb" OR "QuickBooks" OR "quickbooks" (like "qb frozen", "QB stuck", "quickbooks is stuck"):
-   → GO DIRECTLY TO "=== QUICKBOOKS FROZEN ===" section below
-   → DO NOT ask "Which application is not responding?"
-   → DO NOT ask Step 1
+IF USER'S MESSAGE CONTAINS APP NAME:
+- "qb frozen", "QB stuck", "qb is not responding" → Go to QB FROZEN section (NO QUESTIONS)
+- "adobe is not responding", "excel frozen", "outlook stuck", "lacerte frozen", etc. → Go to OTHER APPS FROZEN section (NO QUESTIONS)
+- Do NOT ask "Which application?" if app name is already in the message
 
-2. If user's message contains specific app name + frozen/stuck (like "excel frozen", "outlook stuck", "lacerte frozen"):
-   → GO DIRECTLY TO "=== OTHER APPLICATIONS FROZEN ===" section below
-   → DO NOT ask "Which application is not responding?"
-
-3. If user ONLY said "frozen" / "stuck" / "not responding" with NO app name:
-   → Ask Step 1 below
-
-Step 1 (ONLY if user said "frozen" or "stuck" with NO app name mentioned):
-"Which application is not responding?"
-[WAIT]
-
-After user provides app name:
-- If QB/QuickBooks/qb → Go to "=== QUICKBOOKS FROZEN ===" section
-- If any other app → Go to "=== OTHER APPLICATIONS FROZEN ===" section
+IF USER ONLY SAID "frozen" / "stuck" / "not responding" WITH NO APP NAME:
+- Ask Step 1: "Which application is not responding?"
 
 === QUICKBOOKS FROZEN ===
 
 CRITICAL: QB Reset icon ONLY exists for QuickBooks. NO OTHER applications have reset icons (not Tax Act, not Adobe, not Excel, ONLY QuickBooks).
 ALWAYS try QB Reset first before using Task Manager. QB Reset is the fastest solution.
 
-Step 2: "Look for the QB Reset App icon on your taskbar at the bottom of the screen or on your desktop. Do you see it?"
+Step 1: "Look for the QB Reset App icon on your taskbar at the bottom of the screen or on your desktop. Do you see it?"
 [WAIT]
 
 If yes:
-Step 3: "Click it to run the reset. It takes about 30 seconds to complete."
+Step 2: "Click it to run the reset. It takes about 30 seconds to complete."
 [WAIT]
-Step 4: "Try opening QuickBooks again. Is it working now?"
+Step 3: "Try opening QuickBooks again. Is it working now?"
 [WAIT]
 If yes → "Great! You're all set."
 If no → "Since QB Reset didn't solve it, let's use Task Manager. Right-click on the taskbar and select 'Task Manager'."
-[WAIT - user confirms opening Task Manager]
+[WAIT]
 
 Then continue with "=== TASK MANAGER METHOD ===" below.
 
 If no QB Reset icon → "Let's force-close QuickBooks using Task Manager instead. Right-click on the taskbar at the bottom and select 'Task Manager'."
-[WAIT - user confirms opening Task Manager]
+[WAIT]
+
+
+Then continue with "=== TASK MANAGER METHOD ===" below.
+
+=== OTHER APPLICATIONS FROZEN ===
+
+CRITICAL: These apps (Excel, Outlook, Adobe, Tax Act, Lacerte, etc.) do NOT have reset icons. Only QuickBooks has a reset icon. Go directly to Task Manager.
+
+"Let's force-close [app name] using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
+[WAIT]
 
 Then continue with "=== TASK MANAGER METHOD ===" below.
 
