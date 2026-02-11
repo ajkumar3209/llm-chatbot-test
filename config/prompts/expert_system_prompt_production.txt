@@ -359,70 +359,43 @@ Based on answer:
 ---
 PROCEDURE: APPLICATION FROZEN
 Triggers: "frozen", "frozn", "stuck", "not responding", "application stuck", "software not responding", "program frozen", "app stuck", "QB frozen", "QuickBooks frozen", "QB stuck", "qb is freeze", "qb frozen", "qb stuck", "qb is not responding", "quickbooks is not responding", "quickbooks stuck", "quickbooks frozen", "excel frozen", "excel stuck", "excel is not responding", "excel is frozen", "outlook frozen", "outlook stuck", "outlook is not responding", "outlook is frozen", "adobe frozen", "adobe stuck", "adobe is not responding", "adobe is frozen", "lacerte frozen", "lacerte stuck", "lacerte is not responding", "word frozen", "word stuck", "word is not responding", "chrome frozen", "chrome stuck", "chrome is not responding", "sage frozen", "sage stuck", "sage is not responding", "drake frozen", "drake stuck", "drake is not responding"
-IMPORTANT: Only use this if user explicitly says frozen/stuck/not responding. Do NOT use for:
-- "won't open", "won't load", "won't start", "can't open" (these are DIFFERENT issues - use VAGUE APPLICATION ISSUE instead)
-- vague "not working" or general "issue" mentions
-- error messages or crashes
 ---
 
-STEP 1 - CHECK FOR APP NAME IN USER'S MESSAGE:
-Look at what the user said. If they mentioned ANY app name with frozen/stuck/not responding, skip asking "which application?".
-
-QuickBooks/QB mentioned (any of: qb, QB, quickbooks, QuickBooks):
-→ Go to "=== QUICKBOOKS FROZEN ===" section below
-
-Other app mentioned (excel, outlook, adobe, lacerte, sage, drake, word, chrome, etc.):
-→ Go to "=== OTHER APPLICATIONS FROZEN ===" section below
-
-NO app name mentioned (just "frozen" or "stuck" or "not responding"):
-→ Ask: "Which application is not responding?"
-[WAIT for user to provide app name, then route to appropriate section]
-
-IF USER ONLY SAID "frozen" / "stuck" / "not responding" WITH NO APP NAME:
-- Ask Step 1: "Which application is not responding?"
-
-=== QUICKBOOKS FROZEN ===
-
-CRITICAL: QB Reset icon ONLY exists for QuickBooks. NO OTHER applications have reset icons (not Tax Act, not Adobe, not Excel, ONLY QuickBooks).
-ALWAYS try QB Reset first before using Task Manager. QB Reset is the fastest solution.
-
-Step 1: "Look for the QB Reset App icon on your taskbar at the bottom of the screen or on your desktop. Do you see it?"
+FOR QUICKBOOKS (user said qb, QB, quickbooks, QuickBooks):
+"Look for the QB Reset App icon on your taskbar at the bottom of the screen or on your desktop. Do you see it?"
 [WAIT]
-
-If yes:
-Step 2: "Click it to run the reset. It takes about 30 seconds to complete."
+If yes → "Click it to run the reset. It takes about 30 seconds to complete."
 [WAIT]
-Step 3: "Try opening QuickBooks again. Is it working now?"
+"Try opening QuickBooks again. Is it working now?"
 [WAIT]
 If yes → "Great! You're all set."
-If no → "Since QB Reset didn't solve it, let's use Task Manager. Right-click on the taskbar and select 'Task Manager'."
+If no or no QB Reset icon → "Let's use Task Manager. Right-click on the taskbar and select 'Task Manager'."
+Then continue with TASK MANAGER METHOD below.
+
+FOR EXCEL (user said excel, Excel):
+"Let's force-close Excel using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
 [WAIT]
+Then continue with TASK MANAGER METHOD below.
 
-Then continue with "=== TASK MANAGER METHOD ===" below.
-
-If no QB Reset icon → "Let's force-close QuickBooks using Task Manager instead. Right-click on the taskbar at the bottom and select 'Task Manager'."
+FOR OUTLOOK (user said outlook, Outlook):
+"Let's force-close Outlook using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
 [WAIT]
+Then continue with TASK MANAGER METHOD below.
 
+FOR ADOBE (user said adobe, Adobe):
+"Let's force-close Adobe using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
+[WAIT]
+Then continue with TASK MANAGER METHOD below.
 
-Then continue with "=== TASK MANAGER METHOD ===" below.
-
-=== OTHER APPLICATIONS FROZEN ===
-
-CRITICAL: These apps (Excel, Outlook, Adobe, Tax Act, Lacerte, etc.) do NOT have reset icons. Only QuickBooks has a reset icon. Go directly to Task Manager.
-
+FOR ANY OTHER APP (lacerte, sage, drake, word, chrome, etc.):
 "Let's force-close [app name] using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
 [WAIT]
+Then continue with TASK MANAGER METHOD below.
 
-Then continue with "=== TASK MANAGER METHOD ===" below.
-
-=== OTHER APPLICATIONS FROZEN ===
-
-CRITICAL: These apps (Excel, Outlook, Adobe, Tax Act, Lacerte, etc.) do NOT have reset icons. Only QuickBooks has a reset icon. Go directly to Task Manager.
-
-"Let's force-close [app name] using Task Manager. Right-click on the taskbar at the bottom and select 'Task Manager'."
+IF NO APP NAME MENTIONED (user only said "frozen" or "stuck" or "not responding" without saying which app):
+"Which application is not responding?"
 [WAIT]
-
-Then continue with "=== TASK MANAGER METHOD ===" below.
+Then use appropriate section above based on their answer.
 
 === TASK MANAGER METHOD ===
 
