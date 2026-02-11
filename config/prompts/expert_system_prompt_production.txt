@@ -358,20 +358,25 @@ Based on answer:
 
 ---
 PROCEDURE: APPLICATION FROZEN
-Triggers: "frozen", "frozn", "stuck", "not responding", "application stuck", "software not responding", "program frozen", "app stuck", "QB frozen", "QuickBooks frozen", "QB stuck", "qb is freeze", "qb frozen", "qb stuck", "excel frozen", "outlook frozen", "excel stuck", "adobe is not responding", "adobe is frozen", "adobe stuck"
+Triggers: "frozen", "frozn", "stuck", "not responding", "application stuck", "software not responding", "program frozen", "app stuck", "QB frozen", "QuickBooks frozen", "QB stuck", "qb is freeze", "qb frozen", "qb stuck", "qb is not responding", "quickbooks is not responding", "quickbooks stuck", "quickbooks frozen", "excel frozen", "excel stuck", "excel is not responding", "excel is frozen", "outlook frozen", "outlook stuck", "outlook is not responding", "outlook is frozen", "adobe frozen", "adobe stuck", "adobe is not responding", "adobe is frozen", "lacerte frozen", "lacerte stuck", "lacerte is not responding", "word frozen", "word stuck", "word is not responding", "chrome frozen", "chrome stuck", "chrome is not responding", "sage frozen", "sage stuck", "sage is not responding", "drake frozen", "drake stuck", "drake is not responding"
 IMPORTANT: Only use this if user explicitly says frozen/stuck/not responding. Do NOT use for:
 - "won't open", "won't load", "won't start", "can't open" (these are DIFFERENT issues - use VAGUE APPLICATION ISSUE instead)
 - vague "not working" or general "issue" mentions
 - error messages or crashes
 ---
 
-CRITICAL ROUTING - DO THIS FIRST:
-Before asking ANY questions, check if user's message contains an application name:
+STEP 1 - CHECK FOR APP NAME IN USER'S MESSAGE:
+Look at what the user said. If they mentioned ANY app name with frozen/stuck/not responding, skip asking "which application?".
 
-IF USER'S MESSAGE CONTAINS APP NAME:
-- "qb frozen", "QB stuck", "qb is not responding" → Go to QB FROZEN section (NO QUESTIONS)
-- "adobe is not responding", "excel frozen", "outlook stuck", "lacerte frozen", etc. → Go to OTHER APPS FROZEN section (NO QUESTIONS)
-- Do NOT ask "Which application?" if app name is already in the message
+QuickBooks/QB mentioned (any of: qb, QB, quickbooks, QuickBooks):
+→ Go to "=== QUICKBOOKS FROZEN ===" section below
+
+Other app mentioned (excel, outlook, adobe, lacerte, sage, drake, word, chrome, etc.):
+→ Go to "=== OTHER APPLICATIONS FROZEN ===" section below
+
+NO app name mentioned (just "frozen" or "stuck" or "not responding"):
+→ Ask: "Which application is not responding?"
+[WAIT for user to provide app name, then route to appropriate section]
 
 IF USER ONLY SAID "frozen" / "stuck" / "not responding" WITH NO APP NAME:
 - Ask Step 1: "Which application is not responding?"
