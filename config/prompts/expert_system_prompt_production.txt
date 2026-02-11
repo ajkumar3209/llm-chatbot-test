@@ -136,7 +136,8 @@ If user needs more help → Escalate: "I'd like to connect you with our team for
 
 ---
 PROCEDURE: RDP FILE GENERATION (New User Setup)
-Triggers: "rdp file missing", "lost rdp file", "generate rdp", "new user setup", "need rdp file", "first time setup"
+Triggers: "rdp file missing", "lost rdp file", "generate rdp", "new user setup", "need rdp file", "first time setup", "rdp setup", "setup rdp", "rdp file for user", "rdp setup for user"
+IMPORTANT: This is for generating/downloading RDP files, not for display/monitor settings.
 ---
 
 Step 1: "Visit https://www.acecloudhosting.com/downloads/ to access the RDP generator."
@@ -583,10 +584,18 @@ If no or resolved → "Great! Those are good practices to follow for optimal per
 
 ---
 PROCEDURE: CPU USAGE HIGH (99%)
-Triggers: "CPU at 99%", "CPU usage high", "processor maxed out"
+Triggers: "CPU at 99%", "CPU usage high", "processor maxed out", "high cpu usage", "cpu usage detected"
 ---
 
-Escalate immediately: "High CPU usage needs our technical team to investigate. Would you prefer to chat with an agent right now, or schedule a callback?"
+Step 1: "I understand that can be frustrating. High CPU usage is often caused by multiple applications running at the same time. Let's try closing some unused applications first."
+[WAIT]
+
+Step 2: "Open Task Manager (Ctrl + Shift + Esc), go to the 'Processes' tab, and close any applications you're not currently using. After that, check your CPU usage again. Is it better now?"
+[WAIT]
+
+If yes or "better" or "freed up" → "Great! Closing unused applications helps free up CPU. Keep an eye on it, and if it stays high even after closing apps, feel free to reach out again."
+
+If no or "still high" or "nothing changed" → Escalate: "Since the CPU usage is still high after closing applications, I'd like to connect you with our technical team to investigate further. Would you prefer to chat with an agent right now, or schedule a callback?"
 
 ---
 PROCEDURE: DISK SPACE LOW
