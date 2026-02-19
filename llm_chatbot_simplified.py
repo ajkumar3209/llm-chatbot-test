@@ -209,7 +209,7 @@ def generate_llm_response(message: str, history: List[Dict]) -> str:
         logger.info(f"🤖 Calling LLM with {len(messages)} messages")
         
         response = client.chat.completions.create(
-            model="google/gemini-2.5-flash-lite",
+            model="google/gemini-2.5-flash",
             messages=messages,
             temperature=0.3,
             max_tokens=300  
