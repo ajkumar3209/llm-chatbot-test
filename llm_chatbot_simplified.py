@@ -8,11 +8,11 @@ import os
 import json
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional
-from fastapi import FastAPI, Request, HTTPException
+from typing import Dict, List
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-import httpx
 from openai import OpenAI
+from zoho_live_integration import create_desk_ticket, send_salesiq_message
 
 # Setup logging
 logging.basicConfig(
@@ -118,82 +118,6 @@ def detect_escalation(user_message: str, bot_response: str, conversation_length:
         return True
     
     return False
-
-
-async def send_salesiq_message(session_id: str, message: str, suggestions: Optional[List[Dict]] = None) -> bool:
-    """Send message to SalesIQ chat"""
-    try:
-        url = f"https://desk.zoho.com/api/v1/portals/{ZOHO_ORG_ID}/chats/{session_id}/messages"
-        
-        payload = {
-            "type": "message",
-            "text": message
-        }
-        
-        if suggestions:
-            payload["suggestions"] = suggestions
-        
-        headers = {
-            "Authorization": f"Zoho-oauthtoken {ZOHO_ACCESS_TOKEN}",
-            "Content-Type": "application/json"
-        }
-        
-        async with httpx.AsyncClient(timeout=10.0) as http_client:
-            response = await http_client.post(url, json=payload, headers=headers)
-            
-            if response.status_code == 200:
-                logger.info(f"✅ Message sent to SalesIQ session {session_id}")
-                return True
-            else:
-                logger.error(f"❌ SalesIQ API error: {response.status_code} - {response.text}")
-                return False
-                
-    except Exception as e:
-        logger.error(f"❌ Failed to send SalesIQ message: {e}")
-        return False
-
-
-async def create_desk_ticket(session_id: str, user_name: str, conversation_history: List[Dict]) -> Optional[str]:
-    """Create Desk ticket for escalation"""
-    try:
-        # Format conversation for ticket
-        conversation_text = "\n\n".join([
-            f"{'User' if msg['role'] == 'user' else 'Bot'}: {msg['content']}"
-            for msg in conversation_history[-10:]  # Last 10 messages
-        ])
-        
-        ticket_data = {
-            "subject": f"Chat Escalation - {user_name}",
-            "departmentId": ZOHO_DEPT_ID,
-            "contactId": session_id,  # Link to chat session
-            "description": f"Chat escalation from AI assistant.\n\n--- Conversation History ---\n\n{conversation_text}",
-            "status": "Open",
-            "priority": "High",
-            "channel": "Chat"
-        }
-        
-        url = f"https://desk.zoho.com/api/v1/tickets"
-        headers = {
-            "Authorization": f"Zoho-oauthtoken {ZOHO_ACCESS_TOKEN}",
-            "Content-Type": "application/json",
-            "orgId": ZOHO_ORG_ID
-        }
-        
-        async with httpx.AsyncClient(timeout=10.0) as http_client:
-            response = await http_client.post(url, json=ticket_data, headers=headers)
-            
-            if response.status_code in [200, 201]:
-                ticket = response.json()
-                ticket_id = ticket.get("id", "unknown")
-                logger.info(f"✅ Desk ticket created: {ticket_id}")
-                return ticket_id
-            else:
-                logger.error(f"❌ Desk API error: {response.status_code} - {response.text}")
-                return None
-                
-    except Exception as e:
-        logger.error(f"❌ Failed to create Desk ticket: {e}")
-        return None
 
 
 def generate_llm_response(message: str, history: List[Dict]) -> str:
@@ -322,7 +246,14 @@ async def webhook(request: Request):
             logger.info(f"🚨 Escalation triggered for session {session_id}")
             
             # Create Desk ticket
-            ticket_id = await create_desk_ticket(session_id, visitor_name, history)
+            ticket_id = await create_desk_ticket(
+                session_id=session_id,
+                user_name=visitor_name,
+                conversation_history=history,
+                access_token=ZOHO_ACCESS_TOKEN,
+                org_id=ZOHO_ORG_ID,
+                dept_id=ZOHO_DEPT_ID,
+            )
             
             # Show escalation buttons in SalesIQ format
             suggestions = [
@@ -339,7 +270,13 @@ async def webhook(request: Request):
             ]
             
             # Send to SalesIQ with buttons (disabled - tokens missing)
-            # await send_salesiq_message(session_id, bot_response, suggestions)
+            # await send_salesiq_message(
+            #     session_id=session_id,
+            #     message=bot_response,
+            #     access_token=ZOHO_ACCESS_TOKEN,
+            #     org_id=ZOHO_ORG_ID,
+            #     suggestions=suggestions,
+            # )
             
             return JSONResponse(
                 status_code=200,
@@ -353,7 +290,12 @@ async def webhook(request: Request):
         
         else:
             # Normal response - no escalation (disabled - tokens missing)
-            # await send_salesiq_message(session_id, bot_response)
+            # await send_salesiq_message(
+            #     session_id=session_id,
+            #     message=bot_response,
+            #     access_token=ZOHO_ACCESS_TOKEN,
+            #     org_id=ZOHO_ORG_ID,
+            # )
             
             return JSONResponse(
                 status_code=200,
