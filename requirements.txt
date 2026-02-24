@@ -1,14 +1,7 @@
-pymupdf
-pandas
-python-dotenv
-python-dateutil
 openai>=1.0.0
-pinecone-client>=3.0.0
-tqdm
 fastapi
 uvicorn
 pydantic
 httpx
-requests
-requests
-urllib3
+tenacity
+python-json-logger>=3.0.0

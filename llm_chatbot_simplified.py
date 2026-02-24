@@ -5,39 +5,142 @@ Just: Expert Prompt → LLM → Response → Escalation Detection → SalesIQ/De
 """
 
 import os
+import re
 import json
+import uuid
+import asyncio
 import logging
+from collections import OrderedDict
 from datetime import datetime
-from typing import Dict, List
-from fastapi import FastAPI, Request
+from typing import Dict, List, Optional, Tuple
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from openai import OpenAI
+from openai import AsyncOpenAI
 from zoho_live_integration import create_desk_ticket, send_salesiq_message
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# Setup structured JSON logging
+from pythonjsonlogger import json as jsonlogger
+
+log_handler = logging.StreamHandler()
+formatter = jsonlogger.JsonFormatter(
+    fmt="%(asctime)s %(name)s %(levelname)s %(message)s",
+    rename_fields={"asctime": "timestamp", "levelname": "level"},
 )
+log_handler.setFormatter(formatter)
+logging.root.handlers = [log_handler]
+logging.root.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI
-app = FastAPI(title="ACE Cloud Chatbot - Simplified v2.0")
+# Initialize FastAPI with lifespan for background tasks
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(application):
+    """Start background session cleanup on startup, cancel on shutdown."""
+    async def _cleanup_loop():
+        while True:
+            await asyncio.sleep(300)  # Every 5 minutes
+            conversations.cleanup_expired()
+    task = asyncio.create_task(_cleanup_loop())
+    yield
+    task.cancel()
+
+app = FastAPI(title="ACE Cloud Chatbot - Simplified v2.0", lifespan=lifespan)
 
 # Environment variables
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 ZOHO_ACCESS_TOKEN = os.getenv("ZOHO_ACCESS_TOKEN", "")
 ZOHO_ORG_ID = os.getenv("ZOHO_ORG_ID", "")
 ZOHO_DEPT_ID = os.getenv("ZOHO_DEPT_ID", "")
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "")
 
-# LLM Client
-client = OpenAI(
+
+async def verify_webhook_secret(request: Request):
+    """Validate webhook requests using a shared secret header.
+    If WEBHOOK_SECRET is not configured, auth is skipped (local dev mode).
+    """
+    if not WEBHOOK_SECRET:
+        return  # No secret configured — skip auth (development mode)
+    incoming_secret = request.headers.get("X-Webhook-Secret", "")
+    if incoming_secret != WEBHOOK_SECRET:
+        logger.warning("Unauthorized webhook attempt from %s", request.client.host if request.client else "unknown")
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+# LLM Client (async for non-blocking event loop)
+client = AsyncOpenAI(
     api_key=OPENROUTER_API_KEY,
     base_url="https://openrouter.ai/api/v1"
 )
 
-# In-memory conversation storage
-conversations: Dict[str, List[Dict]] = {}
+# Session configuration
+MAX_SESSIONS = int(os.getenv("MAX_SESSIONS", "1000"))
+SESSION_TTL_MINUTES = int(os.getenv("SESSION_TTL_MINUTES", "30"))
+MAX_MESSAGES_PER_SESSION = int(os.getenv("MAX_MESSAGES_PER_SESSION", "50"))
+
+
+class SessionStore:
+    """Bounded, TTL-based conversation store.
+    
+    - Evicts sessions idle for longer than `ttl_minutes`.
+    - Caps total sessions at `max_sessions` (LRU eviction).
+    - Caps messages per session at `max_messages` (oldest dropped).
+    """
+
+    def __init__(self, max_sessions: int = 1000, ttl_minutes: int = 30, max_messages: int = 50):
+        self._store: OrderedDict[str, Tuple[datetime, List[Dict]]] = OrderedDict()
+        self.max_sessions = max_sessions
+        self.ttl_minutes = ttl_minutes
+        self.max_messages = max_messages
+
+    def get_or_create(self, session_id: str) -> List[Dict]:
+        """Return message history for session, creating if needed."""
+        if session_id in self._store:
+            self._store.move_to_end(session_id)
+            self._store[session_id] = (datetime.now(), self._store[session_id][1])
+            return self._store[session_id][1]
+        # Evict oldest if at capacity
+        while len(self._store) >= self.max_sessions:
+            evicted_id, _ = self._store.popitem(last=False)
+            logger.info("Session evicted (capacity): %s", evicted_id)
+        self._store[session_id] = (datetime.now(), [])
+        return self._store[session_id][1]
+
+    def reset(self, session_id: str) -> None:
+        """Clear history for a session."""
+        self._store[session_id] = (datetime.now(), [])
+
+    def add_message(self, session_id: str, message: Dict) -> None:
+        """Append a message, dropping oldest if over max_messages."""
+        history = self.get_or_create(session_id)
+        history.append(message)
+        if len(history) > self.max_messages:
+            del history[: len(history) - self.max_messages]
+
+    def cleanup_expired(self) -> int:
+        """Remove sessions idle longer than TTL. Returns count removed."""
+        now = datetime.now()
+        expired = [
+            sid for sid, (last_active, _) in self._store.items()
+            if (now - last_active).total_seconds() > self.ttl_minutes * 60
+        ]
+        for sid in expired:
+            del self._store[sid]
+        if expired:
+            logger.info("Cleaned up %d expired sessions", len(expired))
+        return len(expired)
+
+    def __len__(self) -> int:
+        return len(self._store)
+
+    def __contains__(self, session_id: str) -> bool:
+        return session_id in self._store
+
+
+conversations = SessionStore(
+    max_sessions=MAX_SESSIONS,
+    ttl_minutes=SESSION_TTL_MINUTES,
+    max_messages=MAX_MESSAGES_PER_SESSION,
+)
 
 # Load expert prompt
 def load_expert_prompt() -> str:
@@ -83,69 +186,96 @@ ESCALATION_KEYWORDS = [
 ]
 
 BOT_ESCALATION_PHRASES = [
+    # Bot self-generated escalation signals
     "i'll connect you", "connecting you", "transfer you",
     "let me connect", "i'll transfer", "escalate this",
-    "contact support", "reach out to support", "technical support team"
+    "contact support", "reach out to support", "technical support team",
+    # LLM-generated escalation patterns
+    "i'd like to connect you", "let me connect you",
+    "connect you with our", "connect you with the",
+    "would you like me to connect you", "let me get our team",
+    "immediate attention", "connect you with our technical team",
 ]
 
 
 def detect_escalation(user_message: str, bot_response: str, conversation_length: int) -> bool:
-    """
-    Detect if escalation is needed based on:
+    """Detect if escalation is needed based on:
     1. User explicitly requesting agent
     2. Bot response indicating escalation
     3. Conversation length (frustration indicator)
-    4. Repetitive failed attempts
     """
     user_lower = user_message.lower()
     bot_lower = bot_response.lower()
     
-    # Check user keywords
     for keyword in ESCALATION_KEYWORDS:
         if keyword in user_lower:
-            logger.info(f"Escalation detected: user keyword '{keyword}'")
+            logger.info("Escalation detected: user keyword '%s'", keyword)
             return True
     
-    # Check bot response
     for phrase in BOT_ESCALATION_PHRASES:
         if phrase in bot_lower:
-            logger.info(f"Escalation detected: bot phrase '{phrase}'")
+            logger.info("Escalation detected: bot phrase '%s'", phrase)
             return True
     
-    # Long conversation without resolution
     if conversation_length > 10:
-        logger.info(f"Escalation detected: conversation too long ({conversation_length} messages)")
+        logger.info("Escalation detected: conversation too long (%d messages)", conversation_length)
         return True
     
     return False
 
 
-def generate_llm_response(message: str, history: List[Dict]) -> str:
-    """
-    Single LLM call with expert prompt
-    No classification, no routing - just direct generation
-    """
-    try:
-        messages = [{"role": "system", "content": EXPERT_PROMPT}]
-        messages.extend(history[-20:])  # Last 20 messages for context
-        messages.append({"role": "user", "content": message})
-        
-        logger.info(f"🤖 Calling LLM with {len(messages)} messages")
-        
-        response = client.chat.completions.create(
+def build_reply(replies: List[str], session_id: str, suggestions: Optional[List[Dict]] = None) -> JSONResponse:
+    """Build a SalesIQ-compatible webhook response."""
+    content: Dict = {
+        "action": "reply",
+        "replies": replies,
+        "session_id": session_id,
+    }
+    if suggestions:
+        content["suggestions"] = suggestions
+    return JSONResponse(status_code=200, content=content)
+
+
+async def generate_llm_response(message: str, history: List[Dict]) -> str:
+    """Single async LLM call with expert prompt, retry, and input sanitization."""
+    from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+    from openai import APITimeoutError, RateLimitError, APIConnectionError
+
+    # Input sanitization: strip control chars, cap length
+    message = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', message)
+    message = message[:2000]
+
+    messages = [{"role": "system", "content": EXPERT_PROMPT}]
+    messages.extend(history[-20:])
+    messages.append({"role": "user", "content": message})
+
+    logger.info("Calling LLM with %d messages", len(messages))
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=4),
+        retry=retry_if_exception_type((APITimeoutError, RateLimitError, APIConnectionError)),
+        reraise=True,
+    )
+    async def _call_llm():
+        return await client.chat.completions.create(
             model="google/gemini-2.5-flash",
             messages=messages,
             temperature=0.3,
-            max_tokens=300  
+            max_tokens=300,
         )
-        
+
+    try:
+        response = await _call_llm()
         bot_response = response.choices[0].message.content.strip()
-        
-        logger.info(f"✅ LLM response: {bot_response[:100]}...")
+        logger.info("LLM response length: %d chars", len(bot_response))
         return bot_response
-        
+
+    except (APITimeoutError, RateLimitError, APIConnectionError) as e:
+        logger.error("LLM transient failure after retries: %s", e)
+        return "I apologize, but I'm having trouble processing your request. Let me connect you with our support team."
     except Exception as e:
-        logger.error(f"❌ LLM generation failed: {e}")
+        logger.error("LLM generation failed: %s", e)
         return "I apologize, but I'm having trouble processing your request. Let me connect you with our support team."
 
 
@@ -160,18 +290,20 @@ async def webhook_health():
 
 
 @app.post("/webhook")
-async def webhook(request: Request):
+async def webhook(request: Request, _auth=Depends(verify_webhook_secret)):
     """
     Main webhook handler - simplified flow:
     1. Receive message from SalesIQ
     2. Generate LLM response (single call)
-    3. Check for escalation
-    4. Send response + buttons if needed
-    5. Create Desk ticket if escalating
+    3. Check for escalation via detect_escalation()
+    4. Create Desk ticket if escalating
+    5. Return response + buttons if needed
     """
+    # Parse payload early so session_id is always available for error handler
+    session_id = "unknown"
+    request_id = str(uuid.uuid4())[:8]  # Short unique ID for log correlation
     try:
         data = await request.json()
-        logger.info(f"📨 Webhook received: {json.dumps(data, indent=2)}")
         
         # Extract data
         handler = data.get("handler", "")
@@ -180,70 +312,39 @@ async def webhook(request: Request):
         session_id = visitor.get("active_conversation_id", data.get("session_id", "unknown"))
         visitor_name = visitor.get("name", visitor.get("email", "User"))
         
+        logger.info("Webhook received", extra={"request_id": request_id, "handler": handler, "session_id": session_id, "msg_len": len(message)})
+        
         # Handle initial contact (trigger event)
         if handler == "trigger" and not message:
-            logger.info(f"👋 Initial contact - session {session_id}")
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "action": "reply",
-                    "replies": ["Hi! I'm AceBuddy,What can I help you with today?"],
-                    "session_id": session_id
-                }
-            )
+            logger.info("Initial contact - session %s", session_id)
+            return build_reply(["Hi! I'm AceBuddy, What can I help you with today?"], session_id)
         
         if not message:
-            logger.warning("Empty message received (non-trigger)")
-            return JSONResponse(
-                status_code=200,
-                content={"action": "reply", "replies": [], "session_id": session_id}
-            )
+            return build_reply([], session_id)
         
         # Session reset keyword
         if message.lower() in ["new issue", "start fresh", "reset", "clear context"]:
-            conversations[session_id] = []
-            logger.info(f"🔄 Session reset for {session_id}")
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "action": "reply",
-                    "replies": ["Sure! Starting fresh. What issue can I help you with today?"],
-                    "session_id": session_id
-                }
-            )
+            conversations.reset(session_id)
+            logger.info("Session reset for %s", session_id)
+            return build_reply(["Sure! Starting fresh. What issue can I help you with today?"], session_id)
         
-        # Get/create conversation history
-        if session_id not in conversations:
-            conversations[session_id] = []
-        
-        history = conversations[session_id]
+        # Get/create conversation history (bounded + TTL-tracked)
+        history = conversations.get_or_create(session_id)
         
         # Add user message to history
-        history.append({"role": "user", "content": message})
+        conversations.add_message(session_id, {"role": "user", "content": message})
         
         # Generate LLM response (SINGLE CALL)
-        bot_response = generate_llm_response(message, history)
+        bot_response = await generate_llm_response(message, history)
         
         # Add bot response to history
-        history.append({"role": "assistant", "content": bot_response})
+        conversations.add_message(session_id, {"role": "assistant", "content": bot_response})
         
-        # Check if escalation needed
-        # ESCALATION TRIGGER 1: User explicitly asks
-        user_asks_escalation = any(phrase in message.lower() for phrase in [
-            "talk to someone", "speak to agent", "connect me", "human agent", "real person"
-        ])
-        
-        # ESCALATION TRIGGER 2: LLM generated escalation message (detected by keywords)
-        llm_generated_escalation = any(phrase in bot_response.lower() for phrase in [
-            "i'd like to connect you", "let me connect you", "connect you with our", "connect you with the",
-            "would you like me to connect you", "let me get our team", "immediate attention", "technical team",
-            "connect you with our technical team", "i understand this is", "thank you for your patience"
-        ])
-        
-        needs_escalation = user_asks_escalation or llm_generated_escalation
+        # Check if escalation needed (consolidated detection)
+        needs_escalation = detect_escalation(message, bot_response, len(history))
         
         if needs_escalation:
-            logger.info(f"🚨 Escalation triggered for session {session_id}")
+            logger.info("Escalation triggered for session %s", session_id)
             
             # Create Desk ticket
             ticket_id = await create_desk_ticket(
@@ -257,64 +358,19 @@ async def webhook(request: Request):
             
             # Show escalation buttons in SalesIQ format
             suggestions = [
-                {
-                    "text": "Chat with Technician",
-                    "action_type": "article",
-                    "action_value": "ESCALATE_CHAT"
-                },
-                {
-                    "text": "Schedule Callback",
-                    "action_type": "article",
-                    "action_value": "SCHEDULE_CALLBACK"
-                }
+                {"text": "Chat with Technician", "action_type": "article", "action_value": "ESCALATE_CHAT"},
+                {"text": "Schedule Callback", "action_type": "article", "action_value": "SCHEDULE_CALLBACK"},
             ]
             
-            # Send to SalesIQ with buttons (disabled - tokens missing)
-            # await send_salesiq_message(
-            #     session_id=session_id,
-            #     message=bot_response,
-            #     access_token=ZOHO_ACCESS_TOKEN,
-            #     org_id=ZOHO_ORG_ID,
-            #     suggestions=suggestions,
-            # )
-            
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "action": "reply",
-                    "replies": [bot_response],
-                    "suggestions": suggestions,
-                    "session_id": session_id
-                }
-            )
+            return build_reply([bot_response], session_id, suggestions=suggestions)
         
-        else:
-            # Normal response - no escalation (disabled - tokens missing)
-            # await send_salesiq_message(
-            #     session_id=session_id,
-            #     message=bot_response,
-            #     access_token=ZOHO_ACCESS_TOKEN,
-            #     org_id=ZOHO_ORG_ID,
-            # )
-            
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "action": "reply",
-                    "replies": [bot_response],
-                    "session_id": session_id
-                }
-            )
+        return build_reply([bot_response], session_id)
         
     except Exception as e:
-        logger.error(f"❌ Webhook error: {e}", exc_info=True)
-        return JSONResponse(
-            status_code=200,
-            content={
-                "action": "reply",
-                "replies": ["I'm experiencing technical difficulties. Let me connect you with our support team."],
-                "session_id": session_id if 'session_id' in locals() else "unknown"
-            }
+        logger.error("Webhook error: %s", e, exc_info=True)
+        return build_reply(
+            ["I'm experiencing technical difficulties. Let me connect you with our support team."],
+            session_id,
         )
 
 
@@ -346,9 +402,9 @@ async def webhook_salesiq_health():
 
 
 @app.post("/webhook/salesiq")
-async def webhook_salesiq(request: Request):
+async def webhook_salesiq(request: Request, _auth=Depends(verify_webhook_secret)):
     """Alias for SalesIQ webhook - same as /webhook"""
-    return await webhook(request)
+    return await webhook(request, _auth=_auth)
 
 
 @app.get("/")
