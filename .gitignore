@@ -26,6 +26,9 @@ wheels/
 # Environment variables
 .env
 
+# Test artifacts
+err.txt
+
 # IDE
 .vscode/
 .idea/

@@ -15,7 +15,8 @@ from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, APITimeoutError, RateLimitError, APIConnectionError
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from zoho_live_integration import create_desk_ticket, send_salesiq_message
 
 # Setup structured JSON logging
@@ -30,6 +31,10 @@ log_handler.setFormatter(formatter)
 logging.root.handlers = [log_handler]
 logging.root.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Suppress noisy third-party loggers
+logging.getLogger("uvicorn.access").handlers = []
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # Initialize FastAPI with lifespan for background tasks
 from contextlib import asynccontextmanager
@@ -60,11 +65,11 @@ async def verify_webhook_secret(request: Request):
     If WEBHOOK_SECRET is not configured, auth is skipped (local dev mode).
     """
     if not WEBHOOK_SECRET:
-        return  # No secret configured — skip auth (development mode)
-    incoming_secret = request.headers.get("X-Webhook-Secret", "")
-    if incoming_secret != WEBHOOK_SECRET:
-        logger.warning("Unauthorized webhook attempt from %s", request.client.host if request.client else "unknown")
-        raise HTTPException(status_code=401, detail="Unauthorized")
+        return  # No secret configured → skip auth
+    incoming = request.headers.get("X-Webhook-Secret", "")
+    if incoming != WEBHOOK_SECRET:
+        raise HTTPException(status_code=401, detail="Invalid webhook secret")
+
 
 # LLM Client (async for non-blocking event loop)
 client = AsyncOpenAI(
@@ -75,19 +80,20 @@ client = AsyncOpenAI(
 # Session configuration
 MAX_SESSIONS = int(os.getenv("MAX_SESSIONS", "1000"))
 SESSION_TTL_MINUTES = int(os.getenv("SESSION_TTL_MINUTES", "30"))
-MAX_MESSAGES_PER_SESSION = int(os.getenv("MAX_MESSAGES_PER_SESSION", "50"))
+MAX_MESSAGES_PER_SESSION = int(os.getenv("MAX_MESSAGES_PER_SESSION", "20"))
 
 
 class SessionStore:
     """Bounded, TTL-based conversation store.
-    
+
     - Evicts sessions idle for longer than `ttl_minutes`.
     - Caps total sessions at `max_sessions` (LRU eviction).
-    - Caps messages per session at `max_messages` (oldest dropped).
+    - Caps messages per session at `max_messages`.
     """
 
     def __init__(self, max_sessions: int = 1000, ttl_minutes: int = 30, max_messages: int = 50):
-        self._store: OrderedDict[str, Tuple[datetime, List[Dict]]] = OrderedDict()
+        self._store: OrderedDict[str, List[Dict]] = OrderedDict()
+        self._last_active: Dict[str, datetime] = {}
         self.max_sessions = max_sessions
         self.ttl_minutes = ttl_minutes
         self.max_messages = max_messages
@@ -96,20 +102,21 @@ class SessionStore:
         """Return message history for session, creating if needed."""
         if session_id in self._store:
             self._store.move_to_end(session_id)
-            self._store[session_id] = (datetime.now(), self._store[session_id][1])
-            return self._store[session_id][1]
-        # Evict oldest if at capacity
-        while len(self._store) >= self.max_sessions:
-            evicted_id, _ = self._store.popitem(last=False)
-            logger.info("Session evicted (capacity): %s", evicted_id)
-        self._store[session_id] = (datetime.now(), [])
-        return self._store[session_id][1]
+        else:
+            # Evict LRU session if at capacity
+            if len(self._store) >= self.max_sessions:
+                oldest_key, _ = self._store.popitem(last=False)
+                self._last_active.pop(oldest_key, None)
+                logger.info("Session evicted (LRU): %s", oldest_key)
+            self._store[session_id] = []
+        self._last_active[session_id] = datetime.now()
+        return self._store[session_id]
 
-    def reset(self, session_id: str) -> None:
+    def reset(self, session_id: str):
         """Clear history for a session."""
-        self._store[session_id] = (datetime.now(), [])
+        self._store.pop(session_id, None)
 
-    def add_message(self, session_id: str, message: Dict) -> None:
+    def add_message(self, session_id: str, message: Dict):
         """Append a message, dropping oldest if over max_messages."""
         history = self.get_or_create(session_id)
         history.append(message)
@@ -120,11 +127,13 @@ class SessionStore:
         """Remove sessions idle longer than TTL. Returns count removed."""
         now = datetime.now()
         expired = [
-            sid for sid, (last_active, _) in self._store.items()
-            if (now - last_active).total_seconds() > self.ttl_minutes * 60
+            sid
+            for sid, last in self._last_active.items()
+            if (now - last).total_seconds() > self.ttl_minutes * 60
         ]
         for sid in expired:
-            del self._store[sid]
+            self._store.pop(sid, None)
+            self._last_active.pop(sid, None)
         if expired:
             logger.info("Cleaned up %d expired sessions", len(expired))
         return len(expired)
@@ -142,47 +151,52 @@ conversations = SessionStore(
     max_messages=MAX_MESSAGES_PER_SESSION,
 )
 
+# Default fallback prompt if expert prompt file is missing
+_FALLBACK_PROMPT = (
+    "You are AceBuddy, an IT support assistant for ACE Cloud Hosting. "
+    "Help users with basic troubleshooting. If unsure, escalate to a human agent."
+)
+
+
 # Load expert prompt
 def load_expert_prompt() -> str:
-    """Load the expert system prompt"""
-    # Load the production expert prompt
+    """Load the expert system prompt with fallback."""
     prompt_path = os.path.join(os.path.dirname(__file__), "config", "prompts", "expert_system_prompt_production.txt")
-    
+
     try:
         with open(prompt_path, 'r', encoding='utf-8') as f:
             content = f.read()
-            logger.info(f"Loaded expert prompt from {prompt_path}: {len(content)} characters")
+            logger.info("Loaded expert prompt: %d characters from %s", len(content), prompt_path)
             return content
     except FileNotFoundError:
-        logger.error(f"Prompt file not found at {prompt_path}")
-        raise
+        logger.error("Prompt file not found at %s — using fallback prompt", prompt_path)
+        return _FALLBACK_PROMPT
+
 
 EXPERT_PROMPT = load_expert_prompt()
 
-# Startup banner
-print("\n" + "="*70)
-print("🚀 ACE CLOUD CHATBOT - SIMPLIFIED v2.0 (LLM-FIRST ARCHITECTURE)")
-print("="*70)
-print(f"✅ Expert prompt loaded: {len(EXPERT_PROMPT)} characters")
-print(f"✅ Single LLM call architecture (no classification layer)")
-print(f"✅ Anti-hallucination mode: ENABLED")
-print(f"✅ SalesIQ integration: ENABLED")
-print(f"✅ Desk API integration: ENABLED")
-print("="*70 + "\n")
+# Structured startup log (replaces print() banner for clean JSON logs)
+logger.info(
+    "Chatbot started",
+    extra={
+        "version": "2.0",
+        "architecture": "direct_llm",
+        "prompt_chars": len(EXPERT_PROMPT),
+        "salesiq": True,
+        "desk_api": True,
+    },
+)
 
-# Escalation keywords
+# Escalation keywords — only explicit agent requests (broad frustration
+# phrases like "not working" removed to avoid false-positive escalations;
+# the LLM system prompt handles nuanced escalation detection).
 ESCALATION_KEYWORDS = [
-    # User requests
+    # Explicit agent requests
     "talk to someone", "speak to agent", "connect me to", "transfer me",
     "human agent", "real person", "customer service", "technical support",
     "call me", "schedule callback", "contact support",
-    
-    # Frustration indicators
-    "not helping", "doesn't work", "still not working", "frustrated",
-    "waste of time", "useless", "not solving", "third time",
-    
     # Explicit escalation
-    "escalate", "supervisor", "manager", "complaint"
+    "escalate", "supervisor", "manager", "complaint",
 ]
 
 BOT_ESCALATION_PHRASES = [
@@ -206,21 +220,21 @@ def detect_escalation(user_message: str, bot_response: str, conversation_length:
     """
     user_lower = user_message.lower()
     bot_lower = bot_response.lower()
-    
+
     for keyword in ESCALATION_KEYWORDS:
         if keyword in user_lower:
             logger.info("Escalation detected: user keyword '%s'", keyword)
             return True
-    
+
     for phrase in BOT_ESCALATION_PHRASES:
         if phrase in bot_lower:
             logger.info("Escalation detected: bot phrase '%s'", phrase)
             return True
-    
+
     if conversation_length > 10:
         logger.info("Escalation detected: conversation too long (%d messages)", conversation_length)
         return True
-    
+
     return False
 
 
@@ -237,17 +251,19 @@ def build_reply(replies: List[str], session_id: str, suggestions: Optional[List[
 
 
 async def generate_llm_response(message: str, history: List[Dict]) -> str:
-    """Single async LLM call with expert prompt, retry, and input sanitization."""
-    from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-    from openai import APITimeoutError, RateLimitError, APIConnectionError
+    """Single async LLM call with expert prompt, retry, and input sanitization.
 
+    NOTE: The caller must have already appended the user message to `history`
+    before calling this function. This function builds the LLM messages list
+    from the system prompt + the last 20 messages in history.
+    """
     # Input sanitization: strip control chars, cap length
     message = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', message)
     message = message[:2000]
 
     messages = [{"role": "system", "content": EXPERT_PROMPT}]
     messages.extend(history[-20:])
-    messages.append({"role": "user", "content": message})
+    # Do NOT re-append user message here — it's already in history
 
     logger.info("Calling LLM with %d messages", len(messages))
 
@@ -304,48 +320,48 @@ async def webhook(request: Request, _auth=Depends(verify_webhook_secret)):
     request_id = str(uuid.uuid4())[:8]  # Short unique ID for log correlation
     try:
         data = await request.json()
-        
+
         # Extract data
         handler = data.get("handler", "")
         message = data.get("message", {}).get("text", "") if isinstance(data.get("message"), dict) else ""
         visitor = data.get("visitor", {})
         session_id = visitor.get("active_conversation_id", data.get("session_id", "unknown"))
         visitor_name = visitor.get("name", visitor.get("email", "User"))
-        
+
         logger.info("Webhook received", extra={"request_id": request_id, "handler": handler, "session_id": session_id, "msg_len": len(message)})
-        
+
         # Handle initial contact (trigger event)
         if handler == "trigger" and not message:
             logger.info("Initial contact - session %s", session_id)
             return build_reply(["Hi! I'm AceBuddy, What can I help you with today?"], session_id)
-        
+
         if not message:
             return build_reply([], session_id)
-        
+
         # Session reset keyword
         if message.lower() in ["new issue", "start fresh", "reset", "clear context"]:
             conversations.reset(session_id)
             logger.info("Session reset for %s", session_id)
             return build_reply(["Sure! Starting fresh. What issue can I help you with today?"], session_id)
-        
+
         # Get/create conversation history (bounded + TTL-tracked)
         history = conversations.get_or_create(session_id)
-        
+
         # Add user message to history
         conversations.add_message(session_id, {"role": "user", "content": message})
-        
+
         # Generate LLM response (SINGLE CALL)
         bot_response = await generate_llm_response(message, history)
-        
+
         # Add bot response to history
         conversations.add_message(session_id, {"role": "assistant", "content": bot_response})
-        
+
         # Check if escalation needed (consolidated detection)
         needs_escalation = detect_escalation(message, bot_response, len(history))
-        
+
         if needs_escalation:
             logger.info("Escalation triggered for session %s", session_id)
-            
+
             # Create Desk ticket
             ticket_id = await create_desk_ticket(
                 session_id=session_id,
@@ -355,17 +371,17 @@ async def webhook(request: Request, _auth=Depends(verify_webhook_secret)):
                 org_id=ZOHO_ORG_ID,
                 dept_id=ZOHO_DEPT_ID,
             )
-            
+
             # Show escalation buttons in SalesIQ format
             suggestions = [
                 {"text": "Chat with Technician", "action_type": "article", "action_value": "ESCALATE_CHAT"},
                 {"text": "Schedule Callback", "action_type": "article", "action_value": "SCHEDULE_CALLBACK"},
             ]
-            
+
             return build_reply([bot_response], session_id, suggestions=suggestions)
-        
+
         return build_reply([bot_response], session_id)
-        
+
     except Exception as e:
         logger.error("Webhook error: %s", e, exc_info=True)
         return build_reply(
