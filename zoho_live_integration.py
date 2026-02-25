@@ -241,6 +241,7 @@ async def create_callback_activity(
     user_name: str,
     user_email: str = "",
     user_phone: str = "",
+    preferred_time: str = "",
     conversation_summary: str = "",
 ) -> Dict:
     """Create a callback activity in Zoho Desk.
@@ -256,6 +257,7 @@ async def create_callback_activity(
             f"User: {user_name}\n"
             f"Email: {user_email or 'Not provided'}\n"
             f"Phone: {user_phone or 'Not provided'}\n"
+            f"Preferred Time: {preferred_time or 'Not specified'}\n"
             f"Session: {session_id}\n\n"
             "--- Conversation Summary ---\n"
             f"{conversation_summary or 'No summary available.'}"
@@ -275,7 +277,7 @@ async def create_callback_activity(
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
-                "https://desk.zoho.com/api/v1/activities",
+                "https://desk.zoho.in/api/v1/activities",
                 json=activity_data,
                 headers=headers,
             )
@@ -287,7 +289,7 @@ async def create_callback_activity(
                 headers["Authorization"] = f"Zoho-oauthtoken {tokens.desk_access_token}"
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     response = await client.post(
-                        "https://desk.zoho.com/api/v1/activities",
+                        "https://desk.zoho.in/api/v1/activities",
                         json=activity_data,
                         headers=headers,
                     )

@@ -16,7 +16,7 @@ from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from openai import AsyncOpenAI, APITimeoutError, RateLimitError, APIConnectionError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-from zoho_live_integration import transfer_to_agent, create_callback_activity, close_chat
+from zoho_live_integration import create_callback_activity, close_chat
 
 # Setup structured JSON logging
 from pythonjsonlogger import json as jsonlogger
@@ -54,6 +54,7 @@ app = FastAPI(title="ACE Cloud Chatbot - Simplified v2.0", lifespan=lifespan)
 # Environment variables
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "")
+SALESIQ_DEPARTMENT_ID = os.getenv("SALESIQ_DEPARTMENT_ID", "2782000000002013")
 
 
 async def verify_webhook_secret(request: Request):
@@ -207,12 +208,20 @@ BOT_ESCALATION_PHRASES = [
     "immediate attention", "connect you with our technical team",
 ]
 
-# Button action values and display texts from SalesIQ suggestion clicks
-CHAT_TRANSFER_TRIGGERS = {"ESCALATE_CHAT", "Chat with Technician", "chat with technician"}
-CALLBACK_TRIGGERS = {"SCHEDULE_CALLBACK", "Schedule Callback", "schedule callback"}
+# ── Button click triggers (strict matching) ──
+# SalesIQ sends action_value or button text as the message when clicked
+CHAT_TRANSFER_TRIGGERS = {
+    "ESCALATE_CHAT",
+    "💬 Chat with Technician", "Chat with Technician", "chat with technician",
+    "option 1", "1",
+}
+CALLBACK_TRIGGERS = {
+    "SCHEDULE_CALLBACK",
+    "📅 Schedule Callback", "Schedule Callback", "schedule callback",
+    "callback", "option 2", "2",
+}
 
 # ── Resolution detection ──
-# User confirmation phrases (user says issue is fixed)
 USER_RESOLUTION_PHRASES = [
     "yes", "yeah", "yep", "yup", "ya", "han", "haan",
     "working now", "it's working", "its working", "it works",
@@ -222,7 +231,6 @@ USER_RESOLUTION_PHRASES = [
     "no more issues", "no issues", "no problem",
 ]
 
-# Bot phrases that indicate the bot just asked about resolution or is wrapping up
 BOT_RESOLUTION_ASK_PHRASES = [
     "is your issue resolved", "is the issue resolved", "is it resolved",
     "is it working now", "is that working", "did that help", "did that fix",
@@ -232,6 +240,9 @@ BOT_RESOLUTION_ASK_PHRASES = [
     "glad i could help", "glad to help", "happy to help",
     "glad that helped", "great to hear",
 ]
+
+# ── State markers (stored in session history to track multi-step flows) ──
+CALLBACK_WAITING_MARKER = "WAITING_FOR_CALLBACK_DETAILS"
 
 
 def detect_resolution(user_message: str, history: List[Dict]) -> bool:
@@ -259,7 +270,6 @@ def detect_resolution(user_message: str, history: List[Dict]) -> bool:
         return False
 
     # Condition 2: Bot's previous message was a resolution check / wrap-up
-    # Look at the last assistant message in history
     last_bot_msg = ""
     for msg in reversed(history):
         if msg.get("role") == "assistant":
@@ -317,11 +327,52 @@ def build_reply(replies: List[str], session_id: str, suggestions: Optional[List[
 
 
 def _build_conversation_summary(history: List[Dict]) -> str:
-    """Build a short text summary from the last 10 messages for API payloads."""
+    """Build a short text summary from the last 10 user/assistant messages."""
     return "\n".join(
         f"{'User' if m['role'] == 'user' else 'Bot'}: {m['content']}"
         for m in history[-10:]
+        if m.get("role") in ("user", "assistant")  # skip system markers
     )
+
+
+def _is_waiting_for_callback(history: List[Dict]) -> bool:
+    """Check if session is waiting for callback details (phone + time)."""
+    return (
+        len(history) > 0
+        and history[-1].get("role") == "system"
+        and history[-1].get("content") == CALLBACK_WAITING_MARKER
+    )
+
+
+def _parse_callback_details(message: str) -> Dict[str, Optional[str]]:
+    """Best-effort parse phone number and preferred time from user's message."""
+    # Try structured format: "time: ...\nphone: ..."
+    time_match = re.search(
+        r"(?i)\btime\b\s*[:=\-]\s*([^\n]+?)(?=\s*phone\b|\s*$)",
+        message, re.DOTALL,
+    )
+    preferred_time = time_match.group(1).strip() if time_match else None
+
+    # Extract phone number
+    phone_match = re.search(r"(?i)\bphone\b\s*[:=\-]\s*([\d\s+\-]+)", message)
+    if phone_match:
+        phone = re.sub(r"[^\d+]", "", phone_match.group(1))
+    else:
+        # Fallback: find any number sequence that looks like a phone number
+        phone_match = re.search(r"\b(?:\+?\d[\d\s\-]{8,}\d)\b", message)
+        phone = phone_match.group(0).strip() if phone_match else None
+
+    # If no structured time found, try to extract from message
+    if not preferred_time:
+        time_keywords = re.search(
+            r"(?i)(tomorrow|today|monday|tuesday|wednesday|thursday|friday|"
+            r"saturday|sunday|morning|afternoon|evening|night|"
+            r"\d{1,2}(?::\d{2})?\s*(?:am|pm|AM|PM))",
+            message,
+        )
+        preferred_time = time_keywords.group(0).strip() if time_keywords else None
+
+    return {"phone": phone, "preferred_time": preferred_time}
 
 
 async def generate_llm_response(message: str, history: List[Dict]) -> str:
@@ -336,8 +387,11 @@ async def generate_llm_response(message: str, history: List[Dict]) -> str:
     message = message[:2000]
 
     messages = [{"role": "system", "content": EXPERT_PROMPT}]
-    messages.extend(history[-20:])
-    # Do NOT re-append user message here — it's already in history
+    # Only include user/assistant messages (skip system markers)
+    messages.extend(
+        m for m in history[-20:]
+        if m.get("role") in ("user", "assistant")
+    )
 
     logger.info("Calling LLM with %d messages", len(messages))
 
@@ -363,96 +417,135 @@ async def generate_llm_response(message: str, history: List[Dict]) -> str:
 
     except (APITimeoutError, RateLimitError, APIConnectionError) as e:
         logger.error("LLM transient failure after retries: %s", e)
-        return "I apologize, but I'm having trouble processing your request. Let me connect you with our support team."
+        return "I apologize, but I'm having trouble processing your request. Please try again in a moment."
     except Exception as e:
         logger.error("LLM generation failed: %s", e)
-        return "I apologize, but I'm having trouble processing your request. Let me connect you with our support team."
+        return "I apologize, but I'm having trouble processing your request. Please try again in a moment."
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# BUTTON HANDLERS — called when user clicks escalation suggestions
+# BUTTON HANDLERS
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-async def handle_chat_transfer(session_id: str, visitor: Dict, history: List[Dict]) -> JSONResponse:
+def handle_chat_transfer(session_id: str) -> JSONResponse:
     """Handle 'Chat with Technician' button click.
 
-    1. Attempt SalesIQ Visitor API transfer
-    2. On failure → fallback to callback activity
+    Uses SalesIQ's official "forward" action — this tells SalesIQ to
+    hand off the chat to a human operator in the specified department.
+    No custom API call needed; SalesIQ handles the routing natively.
     """
-    logger.info("Chat transfer requested for session %s", session_id)
-    summary = _build_conversation_summary(history)
-    visitor_name = visitor.get("name", visitor.get("email", "User"))
-
-    result = await transfer_to_agent(
-        session_id=session_id,
-        visitor_info=visitor,
-        conversation_summary=summary,
-    )
-
-    if result.get("success"):
-        return build_reply(
-            ["I'm connecting you with a technician now. Please hold on — someone will be with you shortly! 🔄"],
-            session_id,
-        )
-
-    # Transfer failed — fallback to callback
-    logger.warning("Transfer failed for %s: %s — falling back to callback", session_id, result.get("error"))
-    callback_result = await create_callback_activity(
-        session_id=session_id,
-        user_name=visitor_name,
-        user_email=visitor.get("email", ""),
-        conversation_summary=summary,
-    )
-
-    if callback_result.get("success"):
-        return build_reply(
-            [
-                "Our agents are currently busy and couldn't connect right now. "
-                "I've scheduled a callback for you — our team will reach out to you shortly! 📞"
+    logger.info("Chat transfer requested — using SalesIQ forward action for session %s", session_id)
+    return JSONResponse(
+        status_code=200,
+        content={
+            "action": "forward",
+            "department": SALESIQ_DEPARTMENT_ID,
+            "replies": [
+                "I'm connecting you with our support team. "
+                "An operator will assist you shortly."
             ],
-            session_id,
-        )
-
-    # Both failed
-    return build_reply(
-        [
-            "I'm sorry, I wasn't able to connect you right now. "
-            "Please try again in a few minutes or contact us at support@acecloudhosting.com."
-        ],
-        session_id,
+        },
     )
 
 
-async def handle_schedule_callback(session_id: str, visitor: Dict, history: List[Dict]) -> JSONResponse:
-    """Handle 'Schedule Callback' button click.
+async def handle_callback_step1(session_id: str, history: List[Dict]) -> JSONResponse:
+    """Handle 'Schedule Callback' button click — Step 1: Ask for details.
 
-    Creates a callback activity in Zoho Desk.
+    Sets a WAITING_FOR_CALLBACK_DETAILS marker in session history so the
+    next message from the user is routed to Step 2 for parsing.
     """
-    logger.info("Callback requested for session %s", session_id)
-    visitor_name = visitor.get("name", visitor.get("email", "User"))
-    summary = _build_conversation_summary(history)
+    logger.info("Callback requested — asking for details, session %s", session_id)
 
-    result = await create_callback_activity(
-        session_id=session_id,
-        user_name=visitor_name,
-        user_email=visitor.get("email", ""),
-        conversation_summary=summary,
+    response_text = (
+        "Perfect! I'm setting up a callback request for you.\n\n"
+        "Please provide:\n"
+        "1. Your preferred time (e.g., 'tomorrow at 2 PM' or 'Monday morning')\n"
+        "2. Your phone number\n\n"
+        "Our support team will call you back at that time."
     )
+
+    # Store the interaction and set the waiting marker
+    history.append({"role": "user", "content": "Schedule Callback"})
+    history.append({"role": "assistant", "content": response_text})
+    history.append({"role": "system", "content": CALLBACK_WAITING_MARKER})
+
+    return build_reply([response_text], session_id)
+
+
+async def handle_callback_step2(
+    session_id: str,
+    message: str,
+    visitor: Dict,
+    history: List[Dict],
+) -> JSONResponse:
+    """Handle callback Step 2: Parse details, create activity, close chat.
+
+    1. Remove the WAITING marker
+    2. Parse phone + preferred time from user's message
+    3. Create callback activity on Desk
+    4. On success → close chat via SalesIQ API + clear session
+    """
+    # Remove the system marker
+    if history and history[-1].get("content") == CALLBACK_WAITING_MARKER:
+        history.pop()
+
+    # Add user's details to history
+    history.append({"role": "user", "content": message})
+
+    # Parse details
+    details = _parse_callback_details(message)
+    logger.info("Callback details parsed: time=%s, phone=%s", details["preferred_time"], details["phone"])
+
+    # Extract visitor info
+    visitor_email = visitor.get("email", "support@acecloudhosting.com")
+    visitor_name = visitor.get("name", visitor_email.split("@")[0] if visitor_email else "Chat User")
+
+    # Build full description including user-provided details
+    summary = _build_conversation_summary(history)
+    full_description = f"{summary}\n\nUSER PROVIDED DETAILS:\n{message}"
+
+    # Create callback activity on Desk
+    try:
+        result = await create_callback_activity(
+            session_id=session_id,
+            user_name=visitor_name,
+            user_email=visitor_email,
+            user_phone=details["phone"] or "",
+            preferred_time=details["preferred_time"] or "",
+            conversation_summary=full_description,
+        )
+        logger.info("Callback activity result: %s", result.get("success"))
+    except Exception as exc:
+        logger.error("Callback activity exception: %s", exc, exc_info=True)
+        result = {"success": False, "error": "exception", "details": str(exc)}
 
     if result.get("success"):
-        return build_reply(
-            ["Your callback has been scheduled! ✅ Our support team will reach out to you shortly."],
-            session_id,
+        logger.info("Callback created successfully for session %s", session_id)
+
+        response_text = (
+            "Your callback has been created successfully.\n"
+            "You will receive a call from our support team at your requested time. "
+            "Thank you for contacting Ace Cloud Hosting!"
         )
 
-    logger.error("Callback creation failed for session %s: %s", session_id, result.get("error"))
-    return build_reply(
-        [
-            "I'm sorry, I wasn't able to schedule a callback right now. "
-            "Please try again or contact us at support@acecloudhosting.com."
-        ],
-        session_id,
-    )
+        # Close the SalesIQ chat session
+        try:
+            close_result = await close_chat(session_id)
+            logger.info("Chat closure result: %s", close_result.get("success"))
+        except Exception as exc:
+            logger.error("Chat closure error: %s", exc)
+
+        # Clear conversation memory
+        conversations.reset(session_id)
+
+        return build_reply([response_text], session_id)
+    else:
+        logger.warning("Callback creation failed for session %s: %s", session_id, result.get("error"))
+        response_text = (
+            "I got your details, but I couldn't create the callback in our system right now. "
+            "Please call our support team at 1-888-415-5240 for immediate help."
+        )
+        return build_reply([response_text], session_id)
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -475,9 +568,11 @@ async def webhook(request: Request, _auth=Depends(verify_webhook_secret)):
     Main webhook handler:
     1. Receive message from SalesIQ
     2. Check for button clicks (Chat Transfer / Schedule Callback)
-    3. Generate LLM response (single call)
-    4. Check for escalation → show buttons
-    5. Return response
+    3. Handle callback detail collection (two-step flow)
+    4. Generate LLM response (single call)
+    5. Check for escalation → show buttons
+    6. Check for resolution → close chat
+    7. Return response
     """
     session_id = "unknown"
     request_id = str(uuid.uuid4())[:8]
@@ -489,7 +584,6 @@ async def webhook(request: Request, _auth=Depends(verify_webhook_secret)):
         message = data.get("message", {}).get("text", "") if isinstance(data.get("message"), dict) else ""
         visitor = data.get("visitor", {})
         session_id = visitor.get("active_conversation_id", data.get("session_id", "unknown"))
-        visitor_name = visitor.get("name", visitor.get("email", "User"))
 
         logger.info("Webhook received", extra={
             "request_id": request_id, "handler": handler,
@@ -504,29 +598,33 @@ async def webhook(request: Request, _auth=Depends(verify_webhook_secret)):
         if not message:
             return build_reply([], session_id)
 
-        # ── Button click: Chat with Technician ──
-        if message.strip() in CHAT_TRANSFER_TRIGGERS:
-            history = conversations.get_or_create(session_id)
-            return await handle_chat_transfer(session_id, visitor, history)
+        message_stripped = message.strip()
+        message_lower = message_stripped.lower()
 
-        # ── Button click: Schedule Callback ──
-        if message.strip() in CALLBACK_TRIGGERS:
+        # ── Button click: Chat with Technician ──
+        # Uses SalesIQ native "forward" action — no API call needed
+        if message_stripped in CHAT_TRANSFER_TRIGGERS or message_lower in CHAT_TRANSFER_TRIGGERS:
+            return handle_chat_transfer(session_id)
+
+        # ── Button click: Schedule Callback (Step 1 — ask for details) ──
+        if message_stripped in CALLBACK_TRIGGERS or message_lower in CALLBACK_TRIGGERS:
             history = conversations.get_or_create(session_id)
-            return await handle_schedule_callback(session_id, visitor, history)
+            # Only start step 1 if not already waiting
+            if not _is_waiting_for_callback(history):
+                return await handle_callback_step1(session_id, history)
+
+        # ── Callback Step 2: User is providing phone + time details ──
+        history = conversations.get_or_create(session_id)
+        if _is_waiting_for_callback(history):
+            return await handle_callback_step2(session_id, message, visitor, history)
 
         # ── Session reset keyword ──
-        if message.lower() in ["new issue", "start fresh", "reset", "clear context"]:
+        if message_lower in ("new issue", "start fresh", "reset", "clear context"):
             conversations.reset(session_id)
             logger.info("Session reset for %s", session_id)
             return build_reply(["Sure! Starting fresh. What issue can I help you with today?"], session_id)
 
-        # ── Normal message flow ──
-        # Get/create conversation history (bounded + TTL-tracked)
-        history = conversations.get_or_create(session_id)
-
         # ── Check for resolution BEFORE generating a new LLM response ──
-        # If the user is confirming their issue is resolved ("yes", "working now", etc.)
-        # after the bot asked "Is your issue resolved?", close the chat via API.
         if len(history) >= 2 and detect_resolution(message, history):
             logger.info("Resolution confirmed for session %s — closing chat", session_id)
 
@@ -542,12 +640,13 @@ async def webhook(request: Request, _auth=Depends(verify_webhook_secret)):
 
             return build_reply(
                 [
-                    "Great to hear your issue is resolved! 🎉 "
+                    "Great to hear your issue is resolved! "
                     "If you ever need help again, feel free to start a new chat. Have a great day!"
                 ],
                 session_id,
             )
 
+        # ── Normal message flow ──
         # Add user message to history
         conversations.add_message(session_id, {"role": "user", "content": message})
 
@@ -565,8 +664,8 @@ async def webhook(request: Request, _auth=Depends(verify_webhook_secret)):
 
             # Show escalation buttons — actual API calls happen when user clicks
             suggestions = [
-                {"text": "Chat with Technician", "action_type": "article", "action_value": "ESCALATE_CHAT"},
-                {"text": "Schedule Callback", "action_type": "article", "action_value": "SCHEDULE_CALLBACK"},
+                {"text": "💬 Chat with Technician", "action_type": "article", "action_value": "ESCALATE_CHAT"},
+                {"text": "📅 Schedule Callback", "action_type": "article", "action_value": "SCHEDULE_CALLBACK"},
             ]
 
             return build_reply([bot_response], session_id, suggestions=suggestions)
