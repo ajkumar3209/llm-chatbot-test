@@ -249,6 +249,7 @@ async def create_callback_activity(
     Uses the Desk standard token. Auto-refreshes on token expiry.
     Returns {"success": True/False, ...}.
     """
+    # Desk Activities API requires specific fields for Calls
     activity_data = {
         "subject": f"Callback Request — {user_name}",
         "departmentId": tokens.desk_dept_id,
@@ -264,8 +265,8 @@ async def create_callback_activity(
         ),
         "priority": "High",
         "status": "Open",
-        "activityType": "Calls",
-        "category": "Callback from Chatbot",
+        "direction": "inbound",  # Added for Calls API
+        # Remove 'type' since Calls API uses explicit endpoint
     }
 
     headers = {
@@ -275,9 +276,10 @@ async def create_callback_activity(
     }
 
     try:
+        # Desk API v1 specific endpoint for Calls
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
-                "https://desk.zoho.in/api/v1/activities",
+                "https://desk.zoho.in/api/v1/calls",
                 json=activity_data,
                 headers=headers,
             )
@@ -289,7 +291,7 @@ async def create_callback_activity(
                 headers["Authorization"] = f"Zoho-oauthtoken {tokens.desk_access_token}"
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     response = await client.post(
-                        "https://desk.zoho.in/api/v1/activities",
+                        "https://desk.zoho.in/api/v1/calls",
                         json=activity_data,
                         headers=headers,
                     )
@@ -330,9 +332,10 @@ async def close_chat(session_id: str) -> Dict:
     """Close a SalesIQ chat session (standard token).
 
     Called when the issue is resolved and confirmed by the user.
+    Uses the SalesIQ v2 API (PUT method).
     """
-    base_url = f"https://salesiq.zoho.in/api/visitor/v1/{tokens.screen_name}"
-    endpoint = f"{base_url}/conversations/{session_id}/end"
+    base_url = f"https://salesiq.zoho.in/api/v2/{tokens.screen_name}"
+    endpoint = f"{base_url}/conversations/{session_id}/close"
 
     headers = {
         "Authorization": f"Zoho-oauthtoken {tokens.salesiq_access_token}",
@@ -341,7 +344,7 @@ async def close_chat(session_id: str) -> Dict:
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(endpoint, headers=headers)
+            response = await client.put(endpoint, headers=headers)
 
         # Auto-refresh on expired token
         if response.status_code in (400, 401) and "Invalid" in response.text:
@@ -349,7 +352,7 @@ async def close_chat(session_id: str) -> Dict:
             if await tokens.refresh_salesiq_standard():
                 headers["Authorization"] = f"Zoho-oauthtoken {tokens.salesiq_access_token}"
                 async with httpx.AsyncClient(timeout=10.0) as client:
-                    response = await client.post(endpoint, headers=headers)
+                    response = await client.put(endpoint, headers=headers)
             else:
                 return {"success": False, "error": "token_refresh_failed"}
 

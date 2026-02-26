@@ -247,68 +247,53 @@ CALLBACK_WAITING_MARKER = "WAITING_FOR_CALLBACK_DETAILS"
 
 def detect_resolution(user_message: str, history: List[Dict]) -> bool:
     """Detect if the user is confirming their issue is resolved.
-
-    Two conditions must both be true:
-    1. The bot's LAST response asked about resolution / offered wrap-up
-    2. The user's CURRENT message is a short confirmation
-
-    This two-step check prevents false positives (e.g. user saying "yes"
-    to a clarifying question mid-troubleshooting).
+    
+    Relaxed logic: simply check if the user is explicitly stating the issue is resolved.
     """
     user_lower = user_message.lower().strip()
 
-    # Condition 1: User message is a short confirmation (< 60 chars to avoid
-    # matching "yes but I also have another issue")
-    user_confirms = False
+    # If the user explicitly says they want to close the chat, or it's resolved
+    explicit_close_phrases = ["close this chat", "close chat", "end chat"]
+    if any(phrase in user_lower for phrase in explicit_close_phrases):
+        return True
+
     if len(user_lower) < 60:
         for phrase in USER_RESOLUTION_PHRASES:
             if phrase in user_lower:
-                user_confirms = True
-                break
-
-    if not user_confirms:
-        return False
-
-    # Condition 2: Bot's previous message was a resolution check / wrap-up
-    last_bot_msg = ""
-    for msg in reversed(history):
-        if msg.get("role") == "assistant":
-            last_bot_msg = msg.get("content", "").lower()
-            break
-
-    if not last_bot_msg:
-        return False
-
-    for phrase in BOT_RESOLUTION_ASK_PHRASES:
-        if phrase in last_bot_msg:
-            logger.info("Resolution detected: user said '%s' after bot asked '%s'",
-                        user_lower[:50], phrase)
-            return True
+                logger.info("Resolution detected: user said '%s'", user_lower)
+                return True
 
     return False
 
 
-def detect_escalation(user_message: str, bot_response: str, conversation_length: int) -> bool:
-    """Detect if escalation is needed based on:
-    1. User explicitly requesting agent
-    2. Bot response indicating escalation
-    3. Conversation length (frustration indicator)
+def detect_escalation(user_message: str, bot_response: str, history: List[Dict]) -> bool:
+    """Detect if escalation is needed.
+    Only triggers ONCE per session to prevent button spam, unless the user explicitly asks for it again.
     """
     user_lower = user_message.lower()
     bot_lower = bot_response.lower()
+
+    # Check if we already showed buttons recently
+    already_escalated = any(msg.get("escalated", False) for msg in history[-5:])
 
     for keyword in ESCALATION_KEYWORDS:
         if keyword in user_lower:
             logger.info("Escalation detected: user keyword '%s'", keyword)
             return True
 
+    # If we already offered escalation, don't keep offering it automatically based on bot phrases/length
+    if already_escalated:
+        return False
+
     for phrase in BOT_ESCALATION_PHRASES:
         if phrase in bot_lower:
             logger.info("Escalation detected: bot phrase '%s'", phrase)
             return True
 
-    if conversation_length > 10:
-        logger.info("Escalation detected: conversation too long (%d messages)", conversation_length)
+    # Check conversation length (count only user/assistant messages)
+    msg_count = sum(1 for m in history if m.get("role") in ("user", "assistant"))
+    if msg_count > 10:
+        logger.info("Escalation detected: conversation too long (%d messages)", msg_count)
         return True
 
     return False
@@ -345,22 +330,37 @@ def _is_waiting_for_callback(history: List[Dict]) -> bool:
 
 
 def _parse_callback_details(message: str) -> Dict[str, Optional[str]]:
-    """Best-effort parse phone number and preferred time from user's message."""
-    # Try structured format: "time: ...\nphone: ..."
-    time_match = re.search(
-        r"(?i)\btime\b\s*[:=\-]\s*([^\n]+?)(?=\s*phone\b|\s*$)",
-        message, re.DOTALL,
-    )
-    preferred_time = time_match.group(1).strip() if time_match else None
+    """裁Best-effort parse phone number and preferred time from user's message."""
+    # Handle the exact format: "time : 11pm today\nphone:343433333"
+    preferred_time = None
+    phone = None
+    
+    # Try parsing line by line first (handles the user's specific input style well)
+    for line in message.split('\n'):
+        line_lower = line.lower().strip()
+        if line_lower.startswith('time') and ':' in line_lower:
+            preferred_time = line.split(':', 1)[1].strip()
+        elif line_lower.startswith('phone') and ':' in line_lower:
+            phone_raw = line.split(':', 1)[1].strip()
+            phone = re.sub(r"[^\d+]", "", phone_raw)
 
-    # Extract phone number
-    phone_match = re.search(r"(?i)\bphone\b\s*[:=\-]\s*([\d\s+\-]+)", message)
-    if phone_match:
-        phone = re.sub(r"[^\d+]", "", phone_match.group(1))
-    else:
-        # Fallback: find any number sequence that looks like a phone number
-        phone_match = re.search(r"\b(?:\+?\d[\d\s\-]{8,}\d)\b", message)
-        phone = phone_match.group(0).strip() if phone_match else None
+    if not preferred_time:
+        # Try structured format: "time: ...\nphone: ..."
+        time_match = re.search(
+            r"(?i)\btime\b\s*[:=\-]\s*([^\n]+?)(?=\s*phone\b|\s*$)",
+            message, re.DOTALL,
+        )
+        preferred_time = time_match.group(1).strip() if time_match else None
+
+    if not phone:
+        # Extract phone number
+        phone_match = re.search(r"(?i)\bphone\b\s*[:=\-]\s*([\d\s+\-]+)", message)
+        if phone_match:
+            phone = re.sub(r"[^\d+]", "", phone_match.group(1))
+        else:
+            # Fallback: find any number sequence that looks like a phone number
+            phone_match = re.search(r"\b(?:\+?\d[\d\s\-]{8,}\d)\b", message)
+            phone = phone_match.group(0).strip() if phone_match else None
 
     # If no structured time found, try to extract from message
     if not preferred_time:
@@ -653,11 +653,11 @@ async def webhook(request: Request, _auth=Depends(verify_webhook_secret)):
         # Generate LLM response (SINGLE CALL)
         bot_response = await generate_llm_response(message, history)
 
-        # Add bot response to history
-        conversations.add_message(session_id, {"role": "assistant", "content": bot_response})
-
         # Check if escalation needed (consolidated detection)
-        needs_escalation = detect_escalation(message, bot_response, len(history))
+        needs_escalation = detect_escalation(message, bot_response, history)
+
+        # Add bot response to history (and mark if we escalated so we don't spam it)
+        conversations.add_message(session_id, {"role": "assistant", "content": bot_response, "escalated": needs_escalation})
 
         if needs_escalation:
             logger.info("Escalation triggered for session %s", session_id)
